@@ -7,28 +7,72 @@
 #include "Macro/AssertionMacros.h"
 #include "ObjectEditorUtils.h"
 #include "PropertyHandle.h"
+#include "Templates/EnumClassBitOperation.h"
+#include "Templates/PropertyHelper.h"
+#include "Templates/IsInstance.h"
+
+namespace FDetailCustomizationUtilities
+{
+	enum class EContainerCombination : uint8;
+}
+
+template<>
+struct Common::BitOperation::TEnumClassBitOperationTraits<FDetailCustomizationUtilities::EContainerCombination> : TEnumClassBitOperationTraitsBase<FDetailCustomizationUtilities::EContainerCombination>
+{
+	using Result = std::true_type;
+};
 
 class UWidget;
-
 #define LOCTEXT_NAMESPACE "DetailCustomizationUtilities"
 
 namespace FDetailCustomizationUtilities
 {
 	DETAILCUSTOMIZATIONUTILITIES_API
-	enum class EMemberContainerType : uint8
+	enum class EContainerCombination : uint8
 	{
-		NotAContainer,
-		Array,
-		Set,
-		Map,
-		MapKey,
-		MapValue,
-	};
+		None					= 0,
+		NotAContainer			= None,
+		ContainerItself			= None,
+		ContainerItselfAsNone	= None,
+		
+		//// Single
+		///
+		Array				= 1 << 1,
+		Set					= 1 << 2,
+		
+		MapKey				= 1 << 3,
+		MapValue			= 1 << 4,
+		Map					= MapKey	| MapValue,
+
+		//// Double
+		///
+		ArrayAndSet 		= Array		| Set,
+		
+		ArrayAndMap 		= Array		| Map,
+		ArrayAndMapKey		= Array		| MapKey,
+		ArrayAndMapValue	= Array		| MapValue,
+		
+		SetAndMap			= Set		| Map,
+		SetAndMapKey		= Set		| MapKey,
+		SetAndMapValue		= Set		| MapValue,
+
+		//// Triple
+		///
+		ArraySetAndMap		= Array 	| SetAndMap,
+		ArraySetAndMapKey	= Array 	| SetAndMapKey,
+		ArraySetAndMapValue	= Array 	| SetAndMapValue,
+	};	
+
+	inline const FString IndexFormat = TEXT("Index [ {0} ]");
+
+	inline const FName AssetComboStyleName = TEXT("PropertyEditor.AssetComboStyle");
+	inline const FName AssetNameColorName = TEXT("PropertyEditor.AssetName.ColorAndOpacity");
 	
 	DETAILCUSTOMIZATIONUTILITIES_API FText GetWidgetName(const UWidget* Widget);
+	DETAILCUSTOMIZATIONUTILITIES_API FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget);
 
 	template<typename ReturnType>
-	ReturnType* GetCurrentValue(const TSharedPtr<IPropertyHandle> ChildHandle, int32& OutResult)
+	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle> ChildHandle, int32& OutResult)
 	{
 		if (ChildHandle.IsValid())
 		{
@@ -39,8 +83,14 @@ namespace FDetailCustomizationUtilities
 				{
 					if (PerObjectValues.Num() > 0)
 					{
-						// TODO template this
-						return TSoftObjectPtr<ReturnType>(PerObjectValues[0]).Get();
+						if constexpr (Common::TIsInstance<ReturnType, TSoftObjectPtr>::value)
+						{
+							return ReturnType(PerObjectValues[0]);
+						}
+						else if constexpr (TIsDerivedFrom<typename TDecay<std::remove_pointer_t<ReturnType>>::Type, UObject>::Value)
+						{
+							return TSoftObjectPtr<typename TDecay<std::remove_pointer_t<ReturnType>>::Type>(PerObjectValues[0]).Get();
+						}
 					}
 					break;		
 				}
@@ -49,16 +99,23 @@ namespace FDetailCustomizationUtilities
 			}
 		}
 
-		return {};
+		return ReturnType{};
+	}
+
+	template<typename ReturnType>
+	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle> ChildHandle)
+	{
+		int32 Result;
+		return GetCurrentValue<ReturnType>(ChildHandle, Result);
 	}
 
 	template<typename ValueType>
-	FText GetCurrentValueText(const TSharedPtr<IPropertyHandle> ChildHandle, const TFunction<FText (const ValueType*)>& Predicate)
+	FText GetCurrentValueText(const TSharedPtr<IPropertyHandle> ChildHandle, const TFunctionRef<FText (const ValueType&)>& Predicate)
 	{
 		if (ChildHandle.IsValid())
 		{
 			int32 Result;
-			const ValueType* Value = GetCurrentValue<ValueType>(ChildHandle, Result);
+			const ValueType Value = GetCurrentValue<ValueType>(ChildHandle, Result);
 			switch (Result)
 			{
 			case FPropertyAccess::MultipleValues:
@@ -73,78 +130,183 @@ namespace FDetailCustomizationUtilities
 		return FText::GetEmpty();
 	}
 
+	template <typename ObjectType>
+	bool SetObjectValue(const ObjectType* Object, const TSharedPtr<IPropertyHandle> PropertyHandle)
+	{
+		if (PropertyHandle.IsValid())
+		{
+			TArray<FString> References;
+			for (int32 Index = 0; Index < PropertyHandle->GetNumPerObjectValues(); Index++)
+			{
+				// using soft object to get the object path string
+				TSoftObjectPtr<ObjectType> SoftObject(Object);
+				References.Add(SoftObject.ToString());
+			}
+
+			// can't use this to set value from UWidgetBlueprintGeneratedClass::WidgetTree(of UClass property i guess),
+			// PPF_ParsingDefaultProperties is needed but that is hard coded
+			// @see FPropertyValueImpl::ImportText of @line 402 : FPropertyTextUtilities::PropertyToTextHelper
+			const bool bResult = PropertyHandle->SetPerObjectValues(References) == FPropertyAccess::Result::Success;
+			
+			EnsureCondition(bResult);
+			
+			return bResult;
+		}
+		
+		return {};
+	}
+
 	DETAILCUSTOMIZATIONUTILITIES_API
-	bool IsArrayElementValid(const TSharedPtr<IPropertyHandle> ElementHandle);
+	/**
+	 * @brief An valid array element property handle would have children num equal to 1
+	 * @param ElementHandle an array element property handle
+	 * @return true if valid
+	 */
+	bool IsContainerElementValid(const TSharedPtr<IPropertyHandle> ElementHandle);
+	
+	DETAILCUSTOMIZATIONUTILITIES_API
+	/**
+	 * @brief  Build the ChildGroupLayerMapping with given PropertyGroupName, and return the corresponding IDetailGroup pointer
+	 * 
+	 * eg: a property with category name " ParentCategory | SubCategory | ThisCategory ", would end up with ChildGroupLayerMapping
+	 * like this:
+	 *			[0] "None"				GroupDefault,
+	 *				"ParentCategory"	GroupA
+	 *				
+	 *			[1] "SubCategory"		GroupB
+	 *			
+	 *			[2] "ThisCategory"		GroupC
+	 *			
+	 *	three "layer"(array element), each layer contains all groups in that layer.
+	 *	
+	 *	the relation between group A, B, C should be "The former is the parent of the latter", in that way, they could be
+	 *	correctly (hierarchically) displayed in editor.
+	 *
+	 *	Pointer of GroupC would be returned
+	 * 
+	 * @param ChildGroupLayerMapping layered group name to IDetailGroup mapping.
+	 * Note it must contain the "start point (no category group)" --- "ChildGroupLayerMapping[0][NAME_None]" element
+	 * 
+	 * @param PropertyGroupName the group (category) name of a property
+	 * 
+	 * @return the IDetailGroup pointer of given PropertyGroupName, so you could "AddPropertyRow" under it.
+	 * ChildGroupLayerMapping would be properly populated
+	 */
+	IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping,
+		const FName PropertyGroupName);
 
+	/**
+	 * @brief Generate container header widget
+	 * @tparam TGroupBuilder any type has "AddGroup" function to add a group
+	 * @param ContainerHandle property handle of the container
+	 * @param GroupBuilder group builder object reference
+	 * @param OnPropertyValueChanged optional call back when container value changed
+	 * @return the reference of  container element group
+	 */
 	template<typename TGroupBuilder>
-	IDetailGroup& GenerateContainerHeader(const TSharedPtr<IPropertyHandle> PropertyHandle, TGroupBuilder& GroupBuilder,
-										  const FSimpleDelegate& OnComponentsChanged = {})
+	IDetailGroup& GenerateContainerHeader(const TSharedPtr<IPropertyHandle> ContainerHandle, TGroupBuilder& GroupBuilder,
+										  const FSimpleDelegate& OnPropertyValueChanged = {})
 	{
-		const FProperty* ComponentsProperty = PropertyHandle->GetProperty();
-		IDetailGroup& ComponentsGroup = GroupBuilder.AddGroup(FObjectEditorUtils::GetCategoryFName(ComponentsProperty),
-													FObjectEditorUtils::GetCategoryText(ComponentsProperty));
+		const FProperty* ContainerProperty = ContainerHandle->GetProperty();
+		IDetailGroup& ContainerGroup = GroupBuilder.AddGroup(FObjectEditorUtils::GetCategoryFName(ContainerProperty),
+													FObjectEditorUtils::GetCategoryText(ContainerProperty));
 	
-		ComponentsGroup.HeaderProperty(PropertyHandle.ToSharedRef());
+		ContainerGroup.HeaderProperty(ContainerHandle.ToSharedRef());
 
-		if (OnComponentsChanged.IsBound())
+		if (OnPropertyValueChanged.IsBound())
 		{
-			// refresh detail view when value changed, element added, deleted, inserted, etc...
-			PropertyHandle->SetOnPropertyValueChanged(OnComponentsChanged);
+			// eg: refresh detail view when value changed, element added, deleted, inserted, etc...
+			ContainerHandle->SetOnPropertyValueChanged(OnPropertyValueChanged);
+
+			// eg: child value changed, element added...
+			ContainerHandle->SetOnChildPropertyValueChanged(OnPropertyValueChanged);
 		}
 	
-		return ComponentsGroup;
+		return ContainerGroup;
 	}
 
-	template<typename PropertyType>
-	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
-		const TFunction<void(const TSharedPtr<IPropertyHandle>, IDetailPropertyRow&, const EMemberContainerType)> Predicate,
-		const EMemberContainerType ContainerType);
+	// forward declaration
+	template<typename PropertyType, typename PropertyBaseClass>
+	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
+	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
+		const TFunctionRef<void(const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const EContainerCombination ContainerType);
 	
-	template<typename PropertyType>
-	void GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle> PropertyHandle, IDetailGroup& ComponentsGroup,
-		const TFunction<void(const TSharedPtr<IPropertyHandle> Handle, IDetailPropertyRow& WidgetPropertyRow, const EMemberContainerType)>& Predicate,
-		const EMemberContainerType ContainerType)
+	/**
+	 * @brief Generate widget for container content (elements)
+	 * @tparam PropertyType the property type you want to customize with 
+	 * @tparam PropertyBaseClass property base class
+	 * @param ContainerHandle container property handle
+	 * @param ContainerGroup container group
+	 * @param Predicate property customization predicate
+	 * @param ContainerType container type of PropertyHandle.
+	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
+	 */
+	template<typename PropertyType, typename PropertyBaseClass>
+	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
+	::Type GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle> ContainerHandle, IDetailGroup& ContainerGroup,
+		const TFunctionRef<void(const TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, const EContainerCombination)>& Predicate,
+		const EContainerCombination ContainerType)
 	{
-		uint32 ComponentNum;
-		PropertyHandle->GetNumChildren(ComponentNum);
+		uint32 ContainerNum;
+		ContainerHandle->GetNumChildren(ContainerNum);
 
-		// traverse components array
-		for (uint32 Index = 0; Index < ComponentNum; ++Index)
+		// traverse the container
+		for (uint32 Index = 0; Index < ContainerNum; ++Index)
 		{
-			const TSharedPtr<IPropertyHandle> ComponentHandle = PropertyHandle->GetChildHandle(Index);
-			CheckCondition(ComponentHandle, continue;);
+			const TSharedPtr<IPropertyHandle> ElementHandle = ContainerHandle->GetChildHandle(Index);
+			CheckCondition(ElementHandle.IsValid(), continue;);
 
-			// Generate widget for component
-			FDetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType>(
-				ComponentsGroup, ComponentHandle, Predicate, ContainerType);
+			// Generate widget for container element
+			FDetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
+				ContainerGroup, ElementHandle, Predicate, ContainerType);
 		}
 	}
-	
-	template<typename PropertyType>
-	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> PropertyHandle, const uint32 NumChildren,
+
+	// forward declaration
+	template<typename PropertyType, typename PropertyBaseClass>
+	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
+	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
-		const TFunction<void (const TSharedPtr<IPropertyHandle>, IDetailPropertyRow&, const EMemberContainerType)> Predicate,
-			const EMemberContainerType ContainerType);
+		const TFunctionRef<void (const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+			const EContainerCombination ContainerType);
 	
-	template<typename PropertyType>
-	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
-		const TFunction<void(const TSharedPtr<IPropertyHandle>, IDetailPropertyRow&, const EMemberContainerType)> Predicate,
-		const EMemberContainerType ContainerType)
+	/**
+	 * @brief Generate widget for a container element
+	 * @tparam PropertyType the property type you want to customize with 
+	 * @tparam PropertyBaseClass property base class 
+	 * @param ParentGroup container group
+	 * @param ElementHandle element property handle
+	 * @param Predicate property customization predicate
+	 * @param ContainerType container type of PropertyHandle.
+	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
+	 */
+	template<typename PropertyType, typename PropertyBaseClass>
+	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
+	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
+		const TFunctionRef<void(const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const EContainerCombination ContainerType)
 	{
 		// add index[] group
-		const FName ElementGroupName = *FString::Format(TEXT("Index[{0}]"),{ElementHandle->GetIndexInArray()});
+		const FName ElementGroupName = *FString::Format(*IndexFormat,{ElementHandle->GetIndexInArray()});
 		IDetailGroup& ElementGroup = ParentGroup.AddGroup(ElementGroupName, FText::FromName(ElementGroupName));
 		
-		ElementGroup
-		.HeaderProperty(ElementHandle.ToSharedRef())
-		.EditCondition(ElementHandle->IsEditable(), {});
-
-		if (!IsArrayElementValid(ElementHandle))
-		{
+		if (IDetailPropertyRow& ElementGroupPropertyRow = ElementGroup.HeaderProperty(ElementHandle.ToSharedRef());
+			ContainerType != EContainerCombination::ContainerItself)
+		{		
+			// generate widget for TMap / TSet / TArray element
+			FDetailWidgetRow& DetailWidgetRow = ElementGroupPropertyRow.CustomWidget();
+			Predicate(ElementHandle, DetailWidgetRow, ContainerType);
 			return;
 		}
 	
-		// add element property and groups
+		// add element properties and groups
+
+		if (!IsContainerElementValid(ElementHandle))
+		{
+			// invalid element that don't have any children
+			return;
+		}
 	
 		const TSharedPtr<IPropertyHandle> ElementValueHandle = ElementHandle->GetChildHandle(0);
 		uint32 NumChildren;
@@ -157,106 +319,102 @@ namespace FDetailCustomizationUtilities
 
 		TArray<TMap<FName, IDetailGroup*>> ChildGroupLayerMapping{ { {NAME_None, &ElementGroup} } };
 	
-		GenerateWidgetsForNestedElement<PropertyType>(ElementValueHandle, NumChildren,
+		GenerateWidgetsForNestedElement<PropertyType, PropertyBaseClass>(ElementValueHandle, NumChildren,
 			ChildGroupLayerMapping, 0, Predicate, ContainerType);
 	}
-	
-	template<typename PropertyType>
-	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> PropertyHandle, const uint32 NumChildren,
+
+	/**
+	 * @brief Generate widgets for nested element (properties of an array element)
+	 * @tparam PropertyType the property type you want to customize with 
+	 * @tparam PropertyBaseClass property base class
+	 * @param ElementHandle element property handle
+	 * @param NumChildren children num of element property handle
+	 * @param ChildGroupLayerMapping layered group name to IDetailGroup mapping.
+	 * Note it must contain the "start point (no category group)" --- "ChildGroupLayerMapping[0][NAME_None]" element
+	 * @param Layer Index of ChildGroupLayerMapping indicates which layer it should resides
+	 * @param Predicate property customization predicate
+	 * @param ContainerType container type of PropertyHandle.
+	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
+	 */
+	template<typename PropertyType, typename PropertyBaseClass>
+	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
+	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
-		const TFunction<void (const TSharedPtr<IPropertyHandle>, IDetailPropertyRow&, const EMemberContainerType)> Predicate,
-		const EMemberContainerType ContainerType)
+		const TFunctionRef<void (const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const EContainerCombination ContainerType)
 	{
+		const UStruct* Base = PropertyBaseClass::StaticClass();
+		
 		for (uint32 Index = 0; Index < NumChildren; ++Index)
 		{
-			TSharedPtr<IPropertyHandle> ChildHandle = PropertyHandle->GetChildHandle(Index);
+			TSharedPtr<IPropertyHandle> ChildHandle = ElementHandle->GetChildHandle(Index);
 			CheckCondition(ChildHandle.IsValid(), continue;);
 
 			// if this child is a property
 			if (const FProperty* Property = ChildHandle->GetProperty())
 			{
-				// add property group
-				IDetailGroup* PropertyGroup = ChildGroupLayerMapping[Layer - 1].FindRef(NAME_None);
+				const FName PropertyGroupName = FObjectEditorUtils::GetCategoryFName(ChildHandle->GetProperty());
 				
-				if (FName PropertyGroupName = FObjectEditorUtils::GetCategoryFName(ChildHandle->GetProperty());
-					PropertyGroupName != NAME_None)
-				{
-					if (PropertyGroup = ChildGroupLayerMapping[Layer].FindRef(PropertyGroupName);
-						!PropertyGroup)
-					{
-						FText InLocalizedDisplayName = FObjectEditorUtils::GetCategoryText(ChildHandle->GetProperty());
-
-						IDetailGroup* ParentGroup = ChildGroupLayerMapping[Layer - 1][NAME_None];
-						PropertyGroup = &ParentGroup->AddGroup(PropertyGroupName, InLocalizedDisplayName);
-
-						ChildGroupLayerMapping[Layer].Add(PropertyGroupName, PropertyGroup);
-					}
-				}
+				IDetailGroup* PropertyGroup = MakePropertyGroups(ChildGroupLayerMapping, PropertyGroupName);
 
 				// PropertyGroup need to be valid from now on
 				CheckPointer(PropertyGroup, continue;);
 
-				const UStruct* Base = UWidget::StaticClass();
-
-				bool bNeedCustomWidget = true;
+				using namespace Common::PropertyHelper;
+				bool bNeedCustomWidget = false;
 				if (const PropertyType* ObjectPropertyBase = CastField<PropertyType>(Property))
 				{
-					if (!ObjectPropertyBase->PropertyClass->IsChildOf(Base))
+					if (ObjectPropertyBase->PropertyClass->IsChildOf(Base))
 					{
-						continue;
+						bNeedCustomWidget = true;
 					}
 				}
 				else if (const FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
 				{
-					if (!Common::IsPropertyClassChildOf<PropertyType>(ArrayProperty->Inner, Base))
+					if (IsPropertyClassChildOf<PropertyType>(ArrayProperty->Inner, Base))
 					{
+						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
+						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, EContainerCombination::Array);
 						continue;
 					}
-
-					IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
-					GenerateWidgetForContainerContent<PropertyType>(ChildHandle, ContainerGroup, Predicate, EMemberContainerType::Array);
 				}
 				else if (const FMapProperty* MapProperty = CastField<FMapProperty>(Property))
 				{
-					const bool bMapKey		= Common::IsPropertyClassChildOf<PropertyType>(MapProperty->KeyProp, Base); 
-					const bool bMapValue	= Common::IsPropertyClassChildOf<PropertyType>(MapProperty->ValueProp, Base); 
-				
-					if (!bMapKey && !bMapValue)
+					if (const bool IsPropertyClassChildOfResult[2] =
+						{
+							IsPropertyClassChildOf<PropertyType>(MapProperty->KeyProp, Base), // bMapKey
+							IsPropertyClassChildOf<PropertyType>(MapProperty->ValueProp, Base) // bMapValue
+						};
+						IsPropertyClassChildOfResult[0] || IsPropertyClassChildOfResult[1])
 					{
+						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
+						
+						EContainerCombination MapContainerType{};
+						if (IsPropertyClassChildOfResult[0] && IsPropertyClassChildOfResult[1])
+						{
+							MapContainerType = EContainerCombination::Map;
+						}
+						else if (IsPropertyClassChildOfResult[0])
+						{
+							MapContainerType = EContainerCombination::MapKey;
+						}
+						else if (IsPropertyClassChildOfResult[1])
+						{
+							MapContainerType = EContainerCombination::MapValue;
+						}
+						
+						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, MapContainerType);
 						continue;
 					}
-
-					IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
-					
-					EMemberContainerType MapContainerType{};
-					if (bMapKey && bMapValue)
-					{
-						MapContainerType = EMemberContainerType::Map;
-					}
-					else if (bMapKey)
-					{
-						MapContainerType = EMemberContainerType::MapKey;
-					}
-					else if (bMapValue)
-					{
-						MapContainerType = EMemberContainerType::MapValue;
-					}
-					
-					GenerateWidgetForContainerContent<PropertyType>(ChildHandle, ContainerGroup, Predicate, MapContainerType);
 				}
 				else if (const FSetProperty* SetProperty = CastField<FSetProperty>(Property))
 				{
-					if (!Common::IsPropertyClassChildOf<PropertyType>(SetProperty->ElementProp, Base))
+					if (IsPropertyClassChildOf<PropertyType>(SetProperty->ElementProp, Base))
 					{
+						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
+						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, EContainerCombination::Set);
 						continue;
 					}
-
-					IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
-					GenerateWidgetForContainerContent<PropertyType>(ChildHandle, ContainerGroup, Predicate, EMemberContainerType::Set);
-				}
-				else
-				{
-					bNeedCustomWidget = false;
 				}
 				
 				// add property row
@@ -265,7 +423,7 @@ namespace FDetailCustomizationUtilities
 
 				if (bNeedCustomWidget)
 				{
-					Predicate(ChildHandle, WidgetPropertyRow, ContainerType);
+					Predicate(ChildHandle, WidgetPropertyRow.CustomWidget(), ContainerType);
 				}
 			}
 			// if this child is a category
@@ -282,7 +440,7 @@ namespace FDetailCustomizationUtilities
 				if (NumChildrenOfChildHandle != 0)
 				{
 					// generate property group and nested property widgets
-					GenerateWidgetsForNestedElement<PropertyType>(ChildHandle, NumChildrenOfChildHandle,
+					GenerateWidgetsForNestedElement<PropertyType, PropertyBaseClass>(ChildHandle, NumChildrenOfChildHandle,
 						ChildGroupLayerMapping, Layer+ 1, Predicate, ContainerType);
 				}
 			}
