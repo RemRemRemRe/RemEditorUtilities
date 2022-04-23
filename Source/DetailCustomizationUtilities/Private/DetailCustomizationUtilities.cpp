@@ -87,5 +87,44 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 	
 	return PropertyGroup;
 }
+
+void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
+	const EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
+{
+	using namespace Common::BitOperation;
 	
+	DetailPropertyRow
+	.NameContent()
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.Padding(PropertyPadding)
+		.AutoWidth()
+		[
+			ContainerType == EContainerCombination::ContainerItself || ContainerType && EContainerCombination::Array
+			? PropertyHandle->CreatePropertyNameWidget()
+
+			: ContainerType && EContainerCombination::Set
+			? PropertyHandle->CreatePropertyNameWidget(FText::AsNumber(PropertyHandle->GetIndexInArray()))
+			:
+
+			(ContainerType == EContainerCombination::Map) || (ContainerType == EContainerCombination::MapKey)
+			? Functor(PropertyHandle->GetKeyHandle())
+			: PropertyHandle->GetKeyHandle()->CreatePropertyValueWidget()
+		]
+	]
+	.ValueContent()
+	[
+		SNew(SHorizontalBox)
+		+ SHorizontalBox::Slot()
+		.Padding(PropertyPadding)
+		.AutoWidth()
+		[
+			ContainerType == EContainerCombination::MapKey
+			// pass bDisplayDefaultPropertyButtons as false to prevent delete button get doubled
+			? PropertyHandle->CreatePropertyValueWidget(false)
+			: Functor(PropertyHandle)
+		]			
+	];
+}
 }

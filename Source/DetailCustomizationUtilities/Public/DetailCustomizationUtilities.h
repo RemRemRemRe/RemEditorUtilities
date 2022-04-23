@@ -67,6 +67,8 @@ namespace FDetailCustomizationUtilities
 
 	inline const FName AssetComboStyleName = TEXT("PropertyEditor.AssetComboStyle");
 	inline const FName AssetNameColorName = TEXT("PropertyEditor.AssetName.ColorAndOpacity");
+
+	inline const FMargin PropertyPadding(2.0f, 0.0f, 2.0f, 0.0f);
 	
 	DETAILCUSTOMIZATIONUTILITIES_API FText GetWidgetName(const UWidget* Widget);
 	DETAILCUSTOMIZATIONUTILITIES_API FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget);
@@ -225,11 +227,14 @@ namespace FDetailCustomizationUtilities
 		return ContainerGroup;
 	}
 
+	typedef TFunctionRef<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, EContainerCombination)>
+	FPropertyCustomizationFunctor;
+	
 	// forward declaration
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
 	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
-		const TFunctionRef<void(const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType);
 	
 	/**
@@ -245,7 +250,7 @@ namespace FDetailCustomizationUtilities
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
 	::Type GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle> ContainerHandle, IDetailGroup& ContainerGroup,
-		const TFunctionRef<void(const TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, const EContainerCombination)>& Predicate,
+		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
 		uint32 ContainerNum;
@@ -268,7 +273,7 @@ namespace FDetailCustomizationUtilities
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
 	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
-		const TFunctionRef<void (const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const FPropertyCustomizationFunctor Predicate,
 			const EContainerCombination ContainerType);
 	
 	/**
@@ -284,7 +289,7 @@ namespace FDetailCustomizationUtilities
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
 	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
-		const TFunctionRef<void(const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
 		// add index[] group
@@ -340,7 +345,7 @@ namespace FDetailCustomizationUtilities
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
 	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
-		const TFunctionRef<void (const TSharedPtr<IPropertyHandle>, FDetailWidgetRow&, const EContainerCombination)>& Predicate,
+		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
 		const UStruct* Base = PropertyBaseClass::StaticClass();
@@ -446,6 +451,19 @@ namespace FDetailCustomizationUtilities
 			}
 		}
 	}
+
+	typedef TFunctionRef<TSharedRef<SWidget>(TSharedPtr<IPropertyHandle> PropertyHandle)> FMakePropertyWidgetFunctor;
+
+	DETAILCUSTOMIZATIONUTILITIES_API	
+	/**
+	 * @brief Make a custom widget for the property no matter whether if it is a container
+	 * @param PropertyHandle handle of the property to customize
+	 * @param DetailPropertyRow the row to put our custom widget in
+	 * @param ContainerType container type of the Property
+	 * @param Functor functor to make custom widget using the PropertyHandle
+	 */
+	void MakeCustomWidgetForProperty(TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
+		EContainerCombination ContainerType, FMakePropertyWidgetFunctor Functor);
 
 }
 
