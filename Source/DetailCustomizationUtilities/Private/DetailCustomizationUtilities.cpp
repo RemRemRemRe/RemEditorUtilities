@@ -127,4 +127,19 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle> PropertyHandl
 		]			
 	];
 }
+
+FString GetPropertyPath(const FProperty* Property)
+{
+	CheckPointer(Property, return {});
+
+	const FString PropertyPath = Property->GetPathName();
+
+	int32 Index;
+	if (!PropertyPath.FindChar(TEXT(':'), Index))
+	{
+		return {};
+	}
+	return PropertyPath.RightChop(Index + 1)/*.Replace(TEXT(":"), TEXT("."))*/;
+}
+	
 }

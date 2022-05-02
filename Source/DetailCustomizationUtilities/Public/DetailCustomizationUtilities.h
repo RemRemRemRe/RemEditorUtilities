@@ -465,6 +465,14 @@ namespace FDetailCustomizationUtilities
 	void MakeCustomWidgetForProperty(TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
 		EContainerCombination ContainerType, FMakePropertyWidgetFunctor Functor);
 
+	DETAILCUSTOMIZATIONUTILITIES_API
+	/**
+	 * @brief Make a property path used for query property handle (using property path name)
+	 * @param Property 
+	 * @return 
+	 */
+	FString GetPropertyPath(const FProperty* Property);
+
 }
 
 #undef LOCTEXT_NAMESPACE
