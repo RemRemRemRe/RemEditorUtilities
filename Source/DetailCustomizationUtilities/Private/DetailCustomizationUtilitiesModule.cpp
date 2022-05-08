@@ -9,7 +9,7 @@ class FDetailCustomizationUtilitiesModule : public IDetailCustomizationUtilities
 	virtual void ShutdownModule() override;
 };
 
-IMPLEMENT_MODULE(FDetailCustomizationUtilitiesModule, DetailCustomizationUtilitiesModule)
+IMPLEMENT_MODULE(FDetailCustomizationUtilitiesModule, DetailCustomizationUtilities)
 
 void FDetailCustomizationUtilitiesModule::StartupModule()
 {

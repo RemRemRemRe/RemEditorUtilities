@@ -22,7 +22,7 @@ public:
 	 */
 	static FORCEINLINE IDetailCustomizationUtilitiesModule& Get()
 	{
-		return FModuleManager::LoadModuleChecked< IDetailCustomizationUtilitiesModule >( "DetailCustomizationUtilitiesModule" );
+		return FModuleManager::LoadModuleChecked< IDetailCustomizationUtilitiesModule >( "DetailCustomizationUtilities" );
 	}
 
 	/**
@@ -32,7 +32,7 @@ public:
 	 */
 	static FORCEINLINE bool IsAvailable()
 	{
-		return FModuleManager::Get().IsModuleLoaded( "DetailCustomizationUtilitiesModule" );
+		return FModuleManager::Get().IsModuleLoaded( "DetailCustomizationUtilities" );
 	}
 	
 };
