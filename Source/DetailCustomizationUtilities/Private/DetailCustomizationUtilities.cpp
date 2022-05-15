@@ -3,14 +3,14 @@
 
 #include "DetailWidgetRow.h"
 
-namespace FDetailCustomizationUtilities
+namespace DetailCustomizationUtilities
 {
 
 FAutoConsoleVariable CVarWidgetObjectPathAsWidgetName(
 	TEXT("DetailCustomizationUtilities.WidgetObjectPathAsWidgetName"), false,
 	TEXT("Show widget object path as widget name"));
 
-FText FDetailCustomizationUtilities::GetWidgetName(const UWidget* Widget)
+FText DetailCustomizationUtilities::GetWidgetName(const UWidget* Widget)
 {
 	if (!Widget)
 	{

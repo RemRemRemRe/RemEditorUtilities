@@ -14,9 +14,10 @@
 using namespace Common;
 
 class UWidget;
+
 #define LOCTEXT_NAMESPACE "DetailCustomizationUtilities"
 
-namespace FDetailCustomizationUtilities
+namespace DetailCustomizationUtilities
 {
 	inline const FString IndexFormat = TEXT("Index [ {0} ]");
 
@@ -218,7 +219,7 @@ namespace FDetailCustomizationUtilities
 			CheckCondition(ElementHandle.IsValid(), continue;);
 
 			// Generate widget for container element
-			FDetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
+			DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
 				ContainerGroup, ElementHandle, Predicate, ContainerType);
 		}
 	}
@@ -253,7 +254,7 @@ namespace FDetailCustomizationUtilities
 		
 		if (IDetailPropertyRow& ElementGroupPropertyRow = ElementGroup.HeaderProperty(ElementHandle.ToSharedRef());
 			ContainerType != EContainerCombination::ContainerItself)
-		{		
+		{
 			// generate widget for TMap / TSet / TArray element
 			FDetailWidgetRow& DetailWidgetRow = ElementGroupPropertyRow.CustomWidget();
 			Predicate(ElementHandle, DetailWidgetRow, ContainerType);
