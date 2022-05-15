@@ -7,62 +7,17 @@
 #include "Macro/AssertionMacros.h"
 #include "ObjectEditorUtils.h"
 #include "PropertyHandle.h"
-#include "Templates/EnumClassBitOperation.h"
 #include "Templates/PropertyHelper.h"
 #include "Templates/IsInstance.h"
+#include "Enum/ContainerCombination.h"
 
-namespace FDetailCustomizationUtilities
-{
-	enum class EContainerCombination : uint8;
-}
-
-template<>
-struct Common::BitOperation::TEnumClassBitOperationTraits<FDetailCustomizationUtilities::EContainerCombination> : TEnumClassBitOperationTraitsBase<FDetailCustomizationUtilities::EContainerCombination>
-{
-	using Result = std::true_type;
-};
+using namespace Common;
 
 class UWidget;
 #define LOCTEXT_NAMESPACE "DetailCustomizationUtilities"
 
 namespace FDetailCustomizationUtilities
 {
-	DETAILCUSTOMIZATIONUTILITIES_API
-	enum class EContainerCombination : uint8
-	{
-		None					= 0,
-		NotAContainer			= None,
-		ContainerItself			= None,
-		ContainerItselfAsNone	= None,
-		
-		//// Single
-		///
-		Array				= 1 << 1,
-		Set					= 1 << 2,
-		
-		MapKey				= 1 << 3,
-		MapValue			= 1 << 4,
-		Map					= MapKey	| MapValue,
-
-		//// Double
-		///
-		ArrayAndSet 		= Array		| Set,
-		
-		ArrayAndMap 		= Array		| Map,
-		ArrayAndMapKey		= Array		| MapKey,
-		ArrayAndMapValue	= Array		| MapValue,
-		
-		SetAndMap			= Set		| Map,
-		SetAndMapKey		= Set		| MapKey,
-		SetAndMapValue		= Set		| MapValue,
-
-		//// Triple
-		///
-		ArraySetAndMap		= Array 	| SetAndMap,
-		ArraySetAndMapKey	= Array 	| SetAndMapKey,
-		ArraySetAndMapValue	= Array 	| SetAndMapValue,
-	};	
-
 	inline const FString IndexFormat = TEXT("Index [ {0} ]");
 
 	inline const FName AssetComboStyleName = TEXT("PropertyEditor.AssetComboStyle");
@@ -85,7 +40,7 @@ namespace FDetailCustomizationUtilities
 				{
 					if (PerObjectValues.Num() > 0)
 					{
-						if constexpr (Common::TIsInstance<ReturnType, TSoftObjectPtr>::value)
+						if constexpr (TIsInstance<ReturnType, TSoftObjectPtr>::value)
 						{
 							return ReturnType(PerObjectValues[0]);
 						}
@@ -365,7 +320,7 @@ namespace FDetailCustomizationUtilities
 				// PropertyGroup need to be valid from now on
 				CheckPointer(PropertyGroup, continue;);
 
-				using namespace Common::PropertyHelper;
+				using namespace PropertyHelper;
 				bool bNeedCustomWidget = false;
 				if (const PropertyType* ObjectPropertyBase = CastField<PropertyType>(Property))
 				{
@@ -454,7 +409,7 @@ namespace FDetailCustomizationUtilities
 
 	typedef TFunctionRef<TSharedRef<SWidget>(TSharedPtr<IPropertyHandle> PropertyHandle)> FMakePropertyWidgetFunctor;
 
-	DETAILCUSTOMIZATIONUTILITIES_API	
+	DETAILCUSTOMIZATIONUTILITIES_API
 	/**
 	 * @brief Make a custom widget for the property no matter whether if it is a container
 	 * @param PropertyHandle handle of the property to customize
