@@ -183,8 +183,8 @@ namespace DetailCustomizationUtilities
 		return ContainerGroup;
 	}
 
-	typedef TFunctionRef<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, EContainerCombination)>
-	FPropertyCustomizationFunctor;
+	using FPropertyCustomizationFunctor =
+		TFunctionRef<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, EContainerCombination)>;
 	
 	// forward declaration
 	template<typename PropertyType, typename PropertyBaseClass>
@@ -408,7 +408,7 @@ namespace DetailCustomizationUtilities
 		}
 	}
 
-	typedef TFunctionRef<TSharedRef<SWidget>(TSharedPtr<IPropertyHandle> PropertyHandle)> FMakePropertyWidgetFunctor;
+	using FMakePropertyWidgetFunctor = TFunctionRef<TSharedRef<SWidget>(TSharedPtr<IPropertyHandle> PropertyHandle)>;
 
 	DETAILCUSTOMIZATIONUTILITIES_API
 	/**

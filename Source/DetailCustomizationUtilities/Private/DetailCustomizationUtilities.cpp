@@ -101,14 +101,14 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle> PropertyHandl
 		.Padding(PropertyPadding)
 		.AutoWidth()
 		[
-			ContainerType == EContainerCombination::ContainerItself || ContainerType && EContainerCombination::Array
+			ContainerType == EContainerCombination::ContainerItself || EnumHasAnyFlags(ContainerType, EContainerCombination::Array)
 			? PropertyHandle->CreatePropertyNameWidget()
 
-			: ContainerType && EContainerCombination::Set
+			: ContainerType == EContainerCombination::Set
 			? PropertyHandle->CreatePropertyNameWidget(FText::AsNumber(PropertyHandle->GetIndexInArray()))
 			:
 
-			(ContainerType == EContainerCombination::Map) || (ContainerType == EContainerCombination::MapKey)
+			EnumHasAllFlags(ContainerType, EContainerCombination::MapKey)
 			? Functor(PropertyHandle->GetKeyHandle())
 			: PropertyHandle->GetKeyHandle()->CreatePropertyValueWidget()
 		]
