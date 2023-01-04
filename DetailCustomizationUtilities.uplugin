@@ -4,7 +4,7 @@
 	"VersionName": "1.0",
 	"FriendlyName": "DetailCustomizationUtilities",
 	"Description": "",
-	"Category": "Game Features",
+	"Category": "Editor",
 	"CreatedBy": "RemRemRemRe",
 	"CreatedByURL": "",
 	"DocsURL": "",
@@ -14,13 +14,12 @@
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
-	"ExplicitlyLoaded": true,
 	"EnabledByDefault": false,
 	"BuiltInInitialFeatureState": "Active",
 	"Modules": [
 		{
-			"Name" : "DetailCustomizationUtilities",
-			"Type" : "UncookedOnly",
+			"Name": "DetailCustomizationUtilities",
+			"Type": "UncookedOnly",
 			"LoadingPhase": "Default"
 		}
 	],

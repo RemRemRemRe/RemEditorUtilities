@@ -91,7 +91,7 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
 	const EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
 {
-	using namespace Common::BitOperation;
+	using namespace BitOperation;
 	
 	DetailPropertyRow
 	.NameContent()

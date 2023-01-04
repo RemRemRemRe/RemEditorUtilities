@@ -11,14 +11,16 @@
 #include "Templates/IsInstance.h"
 #include "Enum/ContainerCombination.h"
 
-using namespace Common;
-
 class UWidget;
 
 #define LOCTEXT_NAMESPACE "DetailCustomizationUtilities"
 
 namespace DetailCustomizationUtilities
 {
+	using namespace Common;
+	using namespace Enum;
+	using namespace PropertyHelper;
+
 	inline const FString IndexFormat = TEXT("Index [ {0} ]");
 
 	inline const FName AssetComboStyleName = TEXT("PropertyEditor.AssetComboStyle");
@@ -321,7 +323,6 @@ namespace DetailCustomizationUtilities
 				// PropertyGroup need to be valid from now on
 				CheckPointer(PropertyGroup, continue;);
 
-				using namespace PropertyHelper;
 				bool bNeedCustomWidget = false;
 				if (const PropertyType* ObjectPropertyBase = CastField<PropertyType>(Property))
 				{
