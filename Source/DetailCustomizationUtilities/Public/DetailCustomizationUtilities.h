@@ -11,12 +11,13 @@
 #include "Templates/IsInstance.h"
 #include "Enum/ContainerCombination.h"
 
-class UWidget;
 
 #define LOCTEXT_NAMESPACE "DetailCustomizationUtilities"
 
 namespace DetailCustomizationUtilities
 {
+	class ::UWidget;
+	
 	using namespace Common;
 	using namespace Enum;
 	using namespace PropertyHelper;
