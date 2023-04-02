@@ -44,13 +44,14 @@ namespace DetailCustomizationUtilities
 				{
 					if (PerObjectValues.Num() > 0)
 					{
+						using RawType = std::remove_pointer_t<ReturnType>;
 						if constexpr (TIsInstance<ReturnType, TSoftObjectPtr>::value)
 						{
 							return ReturnType(PerObjectValues[0]);
 						}
-						else if constexpr (TIsDerivedFrom<typename TDecay<std::remove_pointer_t<ReturnType>>::Type, UObject>::Value)
+						else if constexpr (std::is_base_of_v<UObject, RawType>)
 						{
-							return TSoftObjectPtr<typename TDecay<std::remove_pointer_t<ReturnType>>::Type>(PerObjectValues[0]).Get();
+							return TSoftObjectPtr<RawType>(PerObjectValues[0]).Get();
 						}
 					}
 					break;		
