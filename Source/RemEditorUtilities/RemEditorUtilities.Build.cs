@@ -3,9 +3,9 @@
 
 namespace UnrealBuildTool.Rules
 {
-	public class DetailCustomizationUtilities : ModuleRules
+	public class RemEditorUtilities : ModuleRules
 	{
-		public DetailCustomizationUtilities(ReadOnlyTargetRules target) : base(target)
+		public RemEditorUtilities(ReadOnlyTargetRules target) : base(target)
 		{
 			PCHUsage					= PCHUsageMode.UseExplicitOrSharedPCHs;
 			bLegacyPublicIncludePaths	= false;
@@ -18,11 +18,13 @@ namespace UnrealBuildTool.Rules
 					"Core",
 					"CoreUObject",
 					"Engine",
+					
 					"Slate",
 					"SlateCore",
 					"UMG",
-					"Common",
 					"PropertyEditor",
+
+					"RemCommon",
 				}
 			);
 		}

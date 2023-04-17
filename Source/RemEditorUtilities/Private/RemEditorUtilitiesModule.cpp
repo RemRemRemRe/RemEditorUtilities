@@ -1,25 +1,25 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "DetailCustomizationUtilitiesModule.h"
+#include "RemEditorUtilitiesModule.h"
 
-class FDetailCustomizationUtilitiesModule : public IDetailCustomizationUtilitiesModule
+class FRemEditorUtilitiesModule : public IRemEditorUtilitiesModule
 {
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };
 
-IMPLEMENT_MODULE(FDetailCustomizationUtilitiesModule, DetailCustomizationUtilities)
+IMPLEMENT_MODULE(FRemEditorUtilitiesModule, RemEditorUtilities)
 
-void FDetailCustomizationUtilitiesModule::StartupModule()
+void FRemEditorUtilitiesModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory (but after global variables are initialized, of course.)
-	IDetailCustomizationUtilitiesModule::StartupModule();
+	IRemEditorUtilitiesModule::StartupModule();
 }
 
-void FDetailCustomizationUtilitiesModule::ShutdownModule()
+void FRemEditorUtilitiesModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
-	IDetailCustomizationUtilitiesModule::ShutdownModule();
+	IRemEditorUtilitiesModule::ShutdownModule();
 }

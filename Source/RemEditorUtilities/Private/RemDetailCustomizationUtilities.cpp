@@ -1,16 +1,16 @@
 ﻿
-#include "DetailCustomizationUtilities.h"
+#include "RemDetailCustomizationUtilities.h"
 
 #include "DetailWidgetRow.h"
 
-namespace DetailCustomizationUtilities
+namespace Rem::DetailCustomizationUtilities
 {
 
 FAutoConsoleVariable CVarWidgetObjectPathAsWidgetName(
-	TEXT("DetailCustomizationUtilities.WidgetObjectPathAsWidgetName"), false,
+	TEXT("Rem.DetailCustomizationUtilities.WidgetObjectPathAsWidgetName"), false,
 	TEXT("Show widget object path as widget name"));
 
-FText DetailCustomizationUtilities::GetWidgetName(const UWidget* Widget)
+FText GetWidgetName(const UWidget* Widget)
 {
 	if (!Widget)
 	{

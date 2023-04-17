@@ -4,23 +4,22 @@
 #include "Components/Widget.h"
 #include "IDetailGroup.h"
 #include "IDetailPropertyRow.h"
-#include "Macro/AssertionMacros.h"
+#include "Macro/RemAssertionMacros.h"
 #include "ObjectEditorUtils.h"
 #include "PropertyHandle.h"
-#include "Templates/PropertyHelper.h"
-#include "Templates/IsInstance.h"
-#include "Enum/ContainerCombination.h"
+#include "Templates/RemPropertyHelper.h"
+#include "Templates/RemIsInstance.h"
+#include "Enum/RemContainerCombination.h"
 
 
-#define LOCTEXT_NAMESPACE "DetailCustomizationUtilities"
+#define LOCTEXT_NAMESPACE "DetailCustomizatsionUtilities"
 
-namespace DetailCustomizationUtilities
+namespace Rem::DetailCustomizationUtilities
 {
 	class ::UWidget;
-	
-	using namespace Common;
-	using namespace Enum;
-	using namespace PropertyHelper;
+
+	using namespace Common::Enum;
+	using namespace Common::PropertyHelper;
 
 	inline const FString IndexFormat = TEXT("Index [ {0} ]");
 
@@ -29,11 +28,11 @@ namespace DetailCustomizationUtilities
 
 	inline const FMargin PropertyPadding(2.0f, 0.0f, 2.0f, 0.0f);
 	
-	DETAILCUSTOMIZATIONUTILITIES_API FText GetWidgetName(const UWidget* Widget);
-	DETAILCUSTOMIZATIONUTILITIES_API FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget);
+	REMEDITORUTILITIES_API FText GetWidgetName(const UWidget* Widget);
+	REMEDITORUTILITIES_API FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget);
 
 	template<typename ReturnType>
-	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle> ChildHandle, int32& OutResult)
+	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle>& ChildHandle, int32& OutResult)
 	{
 		if (ChildHandle.IsValid())
 		{
@@ -45,7 +44,7 @@ namespace DetailCustomizationUtilities
 					if (PerObjectValues.Num() > 0)
 					{
 						using RawType = std::remove_pointer_t<ReturnType>;
-						if constexpr (TIsInstance<ReturnType, TSoftObjectPtr>::value)
+						if constexpr (Common::TIsInstance<ReturnType, TSoftObjectPtr>::value)
 						{
 							return ReturnType(PerObjectValues[0]);
 						}
@@ -65,14 +64,14 @@ namespace DetailCustomizationUtilities
 	}
 
 	template<typename ReturnType>
-	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle> ChildHandle)
+	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle>& ChildHandle)
 	{
 		int32 Result;
 		return GetCurrentValue<ReturnType>(ChildHandle, Result);
 	}
 
 	template<typename ValueType>
-	FText GetCurrentValueText(const TSharedPtr<IPropertyHandle> ChildHandle, const TFunctionRef<FText (const ValueType&)>& Predicate)
+	FText GetCurrentValueText(const TSharedPtr<IPropertyHandle>& ChildHandle, const TFunctionRef<FText (const ValueType&)>& Predicate)
 	{
 		if (ChildHandle.IsValid())
 		{
@@ -93,7 +92,7 @@ namespace DetailCustomizationUtilities
 	}
 
 	template <typename ObjectType>
-	bool SetObjectValue(const ObjectType* Object, const TSharedPtr<IPropertyHandle> PropertyHandle)
+	bool SetObjectValue(const ObjectType* Object, const TSharedPtr<IPropertyHandle>& PropertyHandle)
 	{
 		if (PropertyHandle.IsValid())
 		{
@@ -118,7 +117,7 @@ namespace DetailCustomizationUtilities
 		return {};
 	}
 
-	DETAILCUSTOMIZATIONUTILITIES_API
+	REMEDITORUTILITIES_API
 	/**
 	 * @brief An valid array element property handle would have children num equal to 1
 	 * @param ElementHandle an array element property handle
@@ -126,7 +125,7 @@ namespace DetailCustomizationUtilities
 	 */
 	bool IsContainerElementValid(const TSharedPtr<IPropertyHandle> ElementHandle);
 	
-	DETAILCUSTOMIZATIONUTILITIES_API
+	REMEDITORUTILITIES_API
 	/**
 	 * @brief  Build the ChildGroupLayerMapping with given PropertyGroupName, and return the corresponding IDetailGroup pointer
 	 * 
@@ -166,7 +165,7 @@ namespace DetailCustomizationUtilities
 	 * @return the reference of  container element group
 	 */
 	template<typename TGroupBuilder>
-	IDetailGroup& GenerateContainerHeader(const TSharedPtr<IPropertyHandle> ContainerHandle, TGroupBuilder& GroupBuilder,
+	IDetailGroup& GenerateContainerHeader(const TSharedPtr<IPropertyHandle>& ContainerHandle, TGroupBuilder& GroupBuilder,
 										  const FSimpleDelegate& OnPropertyValueChanged = {})
 	{
 		const FProperty* ContainerProperty = ContainerHandle->GetProperty();
@@ -193,7 +192,7 @@ namespace DetailCustomizationUtilities
 	// forward declaration
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
+	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType);
 	
@@ -209,7 +208,8 @@ namespace DetailCustomizationUtilities
 	 */
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle> ContainerHandle, IDetailGroup& ContainerGroup,
+	::Type GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle>& ContainerHandle, IDetailGroup& ContainerGroup,
+		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
@@ -223,7 +223,7 @@ namespace DetailCustomizationUtilities
 			CheckCondition(ElementHandle.IsValid(), continue;);
 
 			// Generate widget for container element
-			DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
+			Rem::DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
 				ContainerGroup, ElementHandle, Predicate, ContainerType);
 		}
 	}
@@ -231,7 +231,7 @@ namespace DetailCustomizationUtilities
 	// forward declaration
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> ElementHandle, const uint32 NumChildren,
+	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
 		const FPropertyCustomizationFunctor Predicate,
 			const EContainerCombination ContainerType);
@@ -248,7 +248,8 @@ namespace DetailCustomizationUtilities
 	 */
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle> ElementHandle,
+	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
+		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
@@ -303,8 +304,9 @@ namespace DetailCustomizationUtilities
 	 */
 	template<typename PropertyType, typename PropertyBaseClass>
 	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle> ElementHandle, const uint32 NumChildren,
+	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
+		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
@@ -413,7 +415,7 @@ namespace DetailCustomizationUtilities
 
 	using FMakePropertyWidgetFunctor = TFunctionRef<TSharedRef<SWidget>(TSharedPtr<IPropertyHandle> PropertyHandle)>;
 
-	DETAILCUSTOMIZATIONUTILITIES_API
+	REMEDITORUTILITIES_API
 	/**
 	 * @brief Make a custom widget for the property no matter whether if it is a container
 	 * @param PropertyHandle handle of the property to customize
@@ -424,7 +426,7 @@ namespace DetailCustomizationUtilities
 	void MakeCustomWidgetForProperty(TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
 		EContainerCombination ContainerType, FMakePropertyWidgetFunctor Functor);
 
-	DETAILCUSTOMIZATIONUTILITIES_API
+	REMEDITORUTILITIES_API
 	/**
 	 * @brief Make a property path used for query property handle (using property path name)
 	 * @param Property 

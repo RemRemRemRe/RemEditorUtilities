@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "DetailCustomizationUtilities",
+	"FriendlyName": "RemEditorUtilities",
 	"Description": "",
 	"Category": "Editor",
 	"CreatedBy": "RemRemRemRe",
@@ -18,14 +18,14 @@
 	"BuiltInInitialFeatureState": "Active",
 	"Modules": [
 		{
-			"Name": "DetailCustomizationUtilities",
+			"Name": "RemEditorUtilities",
 			"Type": "UncookedOnly",
 			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [
 		{
-			"Name": "Common",
+			"Name": "RemCommon",
 			"Enabled": true
 		}
 	]

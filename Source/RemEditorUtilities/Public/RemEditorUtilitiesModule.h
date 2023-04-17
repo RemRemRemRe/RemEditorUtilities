@@ -8,7 +8,7 @@
 /**
  * The public interface to this module
  */
-class IDetailCustomizationUtilitiesModule : public IModuleInterface
+class IRemEditorUtilitiesModule : public IModuleInterface
 {
 
 public:
@@ -19,9 +19,9 @@ public:
 	 *
 	 * @return Returns singleton instance, loading the module on demand if needed
 	 */
-	static IDetailCustomizationUtilitiesModule& Get()
+	static IRemEditorUtilitiesModule& Get()
 	{
-		return FModuleManager::LoadModuleChecked< IDetailCustomizationUtilitiesModule >( "DetailCustomizationUtilities" );
+		return FModuleManager::LoadModuleChecked< IRemEditorUtilitiesModule >( "RemEditorUtilities" );
 	}
 
 	/**
@@ -31,7 +31,7 @@ public:
 	 */
 	static bool IsAvailable()
 	{
-		return FModuleManager::Get().IsModuleLoaded( "DetailCustomizationUtilities" );
+		return FModuleManager::Get().IsModuleLoaded( "RemEditorUtilities" );
 	}
 	
 };
