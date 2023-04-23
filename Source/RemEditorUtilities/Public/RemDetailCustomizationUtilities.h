@@ -1,7 +1,6 @@
 ﻿
 #pragma once
 
-#include "Components/Widget.h"
 #include "IDetailGroup.h"
 #include "IDetailPropertyRow.h"
 #include "Macro/RemAssertionMacros.h"
@@ -14,10 +13,11 @@
 
 #define LOCTEXT_NAMESPACE "DetailCustomizatsionUtilities"
 
+
+class UWidget;
+
 namespace Rem::DetailCustomizationUtilities
 {
-	class ::UWidget;
-
 	using namespace Common::Enum;
 	using namespace Common::PropertyHelper;
 
@@ -109,7 +109,7 @@ namespace Rem::DetailCustomizationUtilities
 			// @see FPropertyValueImpl::ImportText of @line 402 : FPropertyTextUtilities::PropertyToTextHelper
 			const bool bResult = PropertyHandle->SetPerObjectValues(References) == FPropertyAccess::Result::Success;
 			
-			EnsureCondition(bResult);
+			RemEnsureCondition(bResult);
 			
 			return bResult;
 		}
@@ -123,7 +123,7 @@ namespace Rem::DetailCustomizationUtilities
 	 * @param ElementHandle an array element property handle
 	 * @return true if valid
 	 */
-	bool IsContainerElementValid(const TSharedPtr<IPropertyHandle> ElementHandle);
+	bool IsContainerElementValid(const TSharedPtr<IPropertyHandle>& ElementHandle);
 	
 	REMEDITORUTILITIES_API
 	/**
@@ -220,7 +220,7 @@ namespace Rem::DetailCustomizationUtilities
 		for (uint32 Index = 0; Index < ContainerNum; ++Index)
 		{
 			const TSharedPtr<IPropertyHandle> ElementHandle = ContainerHandle->GetChildHandle(Index);
-			CheckCondition(ElementHandle.IsValid(), continue;);
+			RemCheckCondition(ElementHandle.IsValid(), continue;);
 
 			// Generate widget for container element
 			Rem::DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
@@ -315,7 +315,7 @@ namespace Rem::DetailCustomizationUtilities
 		for (uint32 Index = 0; Index < NumChildren; ++Index)
 		{
 			TSharedPtr<IPropertyHandle> ChildHandle = ElementHandle->GetChildHandle(Index);
-			CheckCondition(ChildHandle.IsValid(), continue;);
+			RemCheckCondition(ChildHandle.IsValid(), continue;);
 
 			// if this child is a property
 			if (const FProperty* Property = ChildHandle->GetProperty())
@@ -325,7 +325,7 @@ namespace Rem::DetailCustomizationUtilities
 				IDetailGroup* PropertyGroup = MakePropertyGroups(ChildGroupLayerMapping, PropertyGroupName);
 
 				// PropertyGroup need to be valid from now on
-				CheckPointer(PropertyGroup, continue;);
+				RemCheckVariable(PropertyGroup, continue;);
 
 				bool bNeedCustomWidget = false;
 				if (const PropertyType* ObjectPropertyBase = CastField<PropertyType>(Property))
@@ -423,7 +423,7 @@ namespace Rem::DetailCustomizationUtilities
 	 * @param ContainerType container type of the Property
 	 * @param Functor functor to make custom widget using the PropertyHandle
 	 */
-	void MakeCustomWidgetForProperty(TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
+	void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
 		EContainerCombination ContainerType, FMakePropertyWidgetFunctor Functor);
 
 	REMEDITORUTILITIES_API

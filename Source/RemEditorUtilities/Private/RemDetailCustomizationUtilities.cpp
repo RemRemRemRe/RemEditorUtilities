@@ -2,6 +2,7 @@
 #include "RemDetailCustomizationUtilities.h"
 
 #include "DetailWidgetRow.h"
+#include "Components/Widget.h"
 
 namespace Rem::DetailCustomizationUtilities
 {
@@ -30,7 +31,7 @@ FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget)
 	return GetWidgetName(Widget.Get());
 }
 
-bool IsContainerElementValid(const TSharedPtr<IPropertyHandle> ElementHandle)
+bool IsContainerElementValid(const TSharedPtr<IPropertyHandle>& ElementHandle)
 {
 	// whether the element has valid value
 	uint32 IsElementValid;
@@ -88,7 +89,8 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 	return PropertyGroup;
 }
 
-void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle> PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
+void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
+	// ReSharper disable once CppPassValueParameterByConstReference
 	const EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
 {
 	using namespace BitOperation;
@@ -130,7 +132,7 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle> PropertyHandl
 
 FString GetPropertyPath(const FProperty* Property)
 {
-	CheckPointer(Property, return {});
+	RemCheckVariable(Property, return {});
 
 	const FString PropertyPath = Property->GetPathName();
 
