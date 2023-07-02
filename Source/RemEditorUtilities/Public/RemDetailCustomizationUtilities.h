@@ -30,6 +30,8 @@ namespace Rem::DetailCustomizationUtilities
 	
 	REMEDITORUTILITIES_API FText GetWidgetName(const UWidget* Widget);
 	REMEDITORUTILITIES_API FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget);
+	REMEDITORUTILITIES_API bool IsInstancedStruct(const UScriptStruct* Struct);
+
 
 	template<typename ReturnType>
 	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle>& ChildHandle, int32& OutResult)
@@ -191,11 +193,18 @@ namespace Rem::DetailCustomizationUtilities
 	
 	// forward declaration
 	template<typename PropertyType, typename PropertyBaseClass>
-	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
+	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType);
-	
+
+	// forward declaration
+	template<typename PropertyType, typename PropertyBaseClass>
+	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
+		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
+		const FPropertyCustomizationFunctor Predicate,
+			const EContainerCombination ContainerType);
 	/**
 	 * @brief Generate widget for container content (elements)
 	 * @tparam PropertyType the property type you want to customize with 
@@ -207,34 +216,41 @@ namespace Rem::DetailCustomizationUtilities
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
 	template<typename PropertyType, typename PropertyBaseClass>
-	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle>& ContainerHandle, IDetailGroup& ContainerGroup,
+	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	void GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle>& ContainerHandle, IDetailGroup& ContainerGroup,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
-		uint32 ContainerNum;
-		ContainerHandle->GetNumChildren(ContainerNum);
+		uint32 NumChildren;
+		ContainerHandle->GetNumChildren(NumChildren);
 
-		// traverse the container
-		for (uint32 Index = 0; Index < ContainerNum; ++Index)
+		if (ContainerType != EContainerCombination::Struct)
 		{
-			const TSharedPtr<IPropertyHandle> ElementHandle = ContainerHandle->GetChildHandle(Index);
-			RemCheckCondition(ElementHandle.IsValid(), continue;);
+			// traverse the container
+			for (uint32 Index = 0; Index < NumChildren; ++Index)
+			{
+				const TSharedPtr<IPropertyHandle> ElementHandle = ContainerHandle->GetChildHandle(Index);
+				RemCheckCondition(ElementHandle.IsValid(), continue;);
 
-			// Generate widget for container element
-			Rem::DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
-				ContainerGroup, ElementHandle, Predicate, ContainerType);
+				// Generate widget for container element
+				Rem::DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
+					ContainerGroup, ElementHandle, Predicate, ContainerType);
+			}
+		}
+		else
+		{
+			const FName StructTypeName = CastFieldChecked<FStructProperty>(ContainerHandle->GetProperty())->Struct->GetFName();
+
+			// member of USTRUCT with no category specified will default to the category of "type name of the USTRUCT",
+			// so we add extra mapping here to redirect it
+			TArray<TMap<FName, IDetailGroup*>> ChildGroupLayerMapping{ { {NAME_None, &ContainerGroup},
+				{StructTypeName, &ContainerGroup} } };
+
+			GenerateWidgetsForNestedElement<PropertyType, PropertyBaseClass>(ContainerHandle, NumChildren,
+				ChildGroupLayerMapping, 0, Predicate, ContainerType);
 		}
 	}
-
-	// forward declaration
-	template<typename PropertyType, typename PropertyBaseClass>
-	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
-		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
-		const FPropertyCustomizationFunctor Predicate,
-			const EContainerCombination ContainerType);
 	
 	/**
 	 * @brief Generate widget for a container element
@@ -247,8 +263,8 @@ namespace Rem::DetailCustomizationUtilities
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
 	template<typename PropertyType, typename PropertyBaseClass>
-	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
+	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
@@ -256,9 +272,11 @@ namespace Rem::DetailCustomizationUtilities
 		// add index[] group
 		const FName ElementGroupName = *FString::Format(*IndexFormat,{ElementHandle->GetIndexInArray()});
 		IDetailGroup& ElementGroup = ParentGroup.AddGroup(ElementGroupName, FText::FromName(ElementGroupName));
+
+		const auto* StructProperty = CastField<FStructProperty>(ElementHandle->GetProperty());
 		
 		if (IDetailPropertyRow& ElementGroupPropertyRow = ElementGroup.HeaderProperty(ElementHandle.ToSharedRef());
-			ContainerType != EContainerCombination::ContainerItself)
+			ContainerType != EContainerCombination::ContainerItself && !StructProperty)
 		{
 			// generate widget for TMap / TSet / TArray element
 			FDetailWidgetRow& DetailWidgetRow = ElementGroupPropertyRow.CustomWidget();
@@ -274,7 +292,7 @@ namespace Rem::DetailCustomizationUtilities
 			return;
 		}
 	
-		const TSharedPtr<IPropertyHandle> ElementValueHandle = ElementHandle->GetChildHandle(0);
+		const TSharedPtr<IPropertyHandle> ElementValueHandle = StructProperty ? ElementHandle : ElementHandle->GetChildHandle(0);
 		uint32 NumChildren;
 		ElementValueHandle->GetNumChildren(NumChildren);
 
@@ -283,7 +301,19 @@ namespace Rem::DetailCustomizationUtilities
 			return;
 		}
 
-		TArray<TMap<FName, IDetailGroup*>> ChildGroupLayerMapping{ { {NAME_None, &ElementGroup} } };
+		using FNameToDetailGroupMap = TMap<FName, IDetailGroup*>;
+
+		TArray ChildGroupLayerMapping =
+			!!StructProperty
+				? TArray{
+					// member of USTRUCT with no category specified will default to the category of "type name of the USTRUCT",
+					// so we add extra mapping here to redirect it
+					FNameToDetailGroupMap{{NAME_None, &ElementGroup}},
+					FNameToDetailGroupMap{{StructProperty->Struct->GetFName(), &ElementGroup}}
+				}
+				: TArray{
+					FNameToDetailGroupMap{{NAME_None, &ElementGroup}}
+				};
 	
 		GenerateWidgetsForNestedElement<PropertyType, PropertyBaseClass>(ElementValueHandle, NumChildren,
 			ChildGroupLayerMapping, 0, Predicate, ContainerType);
@@ -303,22 +333,20 @@ namespace Rem::DetailCustomizationUtilities
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
 	template<typename PropertyType, typename PropertyBaseClass>
-	typename TEnableIf<TIsDerivedFrom<PropertyType, FObjectPropertyBase>::Value, void>
-	::Type GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
+	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType)
 	{
-		const UStruct* Base = PropertyBaseClass::StaticClass();
-		
 		for (uint32 Index = 0; Index < NumChildren; ++Index)
 		{
 			TSharedPtr<IPropertyHandle> ChildHandle = ElementHandle->GetChildHandle(Index);
 			RemCheckCondition(ChildHandle.IsValid(), continue;);
 
 			// if this child is a property
-			if (const FProperty* Property = ChildHandle->GetProperty())
+			if (const auto* Property = ChildHandle->GetProperty())
 			{
 				const FName PropertyGroupName = FObjectEditorUtils::GetCategoryFName(ChildHandle->GetProperty());
 				
@@ -327,29 +355,31 @@ namespace Rem::DetailCustomizationUtilities
 				// PropertyGroup need to be valid from now on
 				RemCheckVariable(PropertyGroup, continue;);
 
+				const UStruct* Base = PropertyBaseClass::StaticClass();
+				
 				bool bNeedCustomWidget = false;
-				if (const PropertyType* ObjectPropertyBase = CastField<PropertyType>(Property))
+				if (const auto* ObjectPropertyBase = CastField<PropertyType>(Property))
 				{
 					if (ObjectPropertyBase->PropertyClass->IsChildOf(Base))
 					{
 						bNeedCustomWidget = true;
 					}
 				}
-				else if (const FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
+				else if (const auto* ArrayProperty = CastField<FArrayProperty>(Property))
 				{
-					if (IsPropertyClassChildOf<PropertyType>(ArrayProperty->Inner, Base))
+					if (IsPropertyClassChildOf<PropertyType>(ArrayProperty->Inner, Base) || CastField<FStructProperty>(ArrayProperty->Inner))
 					{
 						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
 						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, EContainerCombination::Array);
 						continue;
 					}
 				}
-				else if (const FMapProperty* MapProperty = CastField<FMapProperty>(Property))
+				else if (const auto* MapProperty = CastField<FMapProperty>(Property))
 				{
 					if (const bool IsPropertyClassChildOfResult[2] =
 						{
 							IsPropertyClassChildOf<PropertyType>(MapProperty->KeyProp, Base), // bMapKey
-							IsPropertyClassChildOf<PropertyType>(MapProperty->ValueProp, Base) // bMapValue
+							IsPropertyClassChildOf<PropertyType>(MapProperty->ValueProp, Base) || CastField<FStructProperty>(MapProperty->ValueProp) // bMapValue
 						};
 						IsPropertyClassChildOfResult[0] || IsPropertyClassChildOfResult[1])
 					{
@@ -373,12 +403,23 @@ namespace Rem::DetailCustomizationUtilities
 						continue;
 					}
 				}
-				else if (const FSetProperty* SetProperty = CastField<FSetProperty>(Property))
+				else if (const auto* SetProperty = CastField<FSetProperty>(Property))
 				{
-					if (IsPropertyClassChildOf<PropertyType>(SetProperty->ElementProp, Base))
+					if (IsPropertyClassChildOf<PropertyType>(SetProperty->ElementProp, Base) || CastField<FStructProperty>(SetProperty->ElementProp))
 					{
 						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
 						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, EContainerCombination::Set);
+						continue;
+					}
+				}
+				else if (const auto* StructProperty = CastField<FStructProperty>(Property);
+					StructProperty)
+				{
+					// skip instanced struct for now
+					if (!IsInstancedStruct(StructProperty->Struct))
+					{
+						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
+						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, EContainerCombination::Struct);
 						continue;
 					}
 				}

@@ -3,6 +3,7 @@
 
 #include "DetailWidgetRow.h"
 #include "Components/Widget.h"
+#include "InstancedStruct.h"
 
 namespace Rem::DetailCustomizationUtilities
 {
@@ -29,6 +30,11 @@ FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget)
 	}
 	
 	return GetWidgetName(Widget.Get());
+}
+
+bool IsInstancedStruct(const UScriptStruct* Struct)
+{
+	return Struct == FInstancedStruct::StaticStruct();
 }
 
 bool IsContainerElementValid(const TSharedPtr<IPropertyHandle>& ElementHandle)
@@ -103,7 +109,9 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHand
 		.Padding(PropertyPadding)
 		.AutoWidth()
 		[
-			ContainerType == EContainerCombination::ContainerItself || EnumHasAnyFlags(ContainerType, EContainerCombination::Array)
+			ContainerType == EContainerCombination::ContainerItself
+			|| ContainerType == EContainerCombination::Struct
+			|| EnumHasAnyFlags(ContainerType, EContainerCombination::Array)
 			? PropertyHandle->CreatePropertyNameWidget()
 
 			: ContainerType == EContainerCombination::Set
