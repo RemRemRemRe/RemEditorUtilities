@@ -14,6 +14,7 @@
 #define LOCTEXT_NAMESPACE "DetailCustomizatsionUtilities"
 
 
+class IAssetEditorInstance;
 class UWidget;
 
 namespace Rem::DetailCustomizationUtilities
@@ -308,8 +309,7 @@ namespace Rem::DetailCustomizationUtilities
 				? TArray{
 					// member of USTRUCT with no category specified will default to the category of "type name of the USTRUCT",
 					// so we add extra mapping here to redirect it
-					FNameToDetailGroupMap{{NAME_None, &ElementGroup}},
-					FNameToDetailGroupMap{{StructProperty->Struct->GetFName(), &ElementGroup}}
+					FNameToDetailGroupMap{{NAME_None, &ElementGroup}, {StructProperty->Struct->GetFName(), &ElementGroup}},
 				}
 				: TArray{
 					FNameToDetailGroupMap{{NAME_None, &ElementGroup}}
@@ -415,10 +415,14 @@ namespace Rem::DetailCustomizationUtilities
 				else if (const auto* StructProperty = CastField<FStructProperty>(Property);
 					StructProperty)
 				{
-					// skip instanced struct for now
+					// skip instanced struct or it can't show up in details panel
 					if (!IsInstancedStruct(StructProperty->Struct))
 					{
 						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
+
+						// TODO this will cause inner properties of customized struct type being shown up redundantly.
+						// eg: FGameplayTag::TagName, we need a way to identify whether a struct type has a detail customization
+						// FPropertyEditorModule::IsCustomizedStruct looks not exposed at the moment
 						GenerateWidgetForContainerContent<PropertyType, PropertyBaseClass>(ChildHandle, ContainerGroup, Predicate, EContainerCombination::Struct);
 						continue;
 					}
@@ -474,6 +478,25 @@ namespace Rem::DetailCustomizationUtilities
 	 * @return 
 	 */
 	FString GetPropertyPath(const FProperty* Property);
+
+	template<typename T>
+	requires std::is_base_of_v<IAssetEditorInstance, T>
+	auto GetAssetEditorInstance(UClass* Class) -> decltype(auto)
+	{
+		if (auto* Blueprint = UBlueprint::GetBlueprintFromClass(Class))
+		{
+			if (IAssetEditorInstance* AssetEditorInstance =
+				GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->FindEditorForAsset(Blueprint, false))
+			{
+				auto* Editor = static_cast<T*>(AssetEditorInstance);
+				RemCheckVariable(Editor);
+
+				return Editor;
+			}
+		}
+
+		return static_cast<T*>(nullptr);
+	}
 
 }
 

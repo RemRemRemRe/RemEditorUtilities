@@ -24,8 +24,8 @@ namespace UnrealBuildTool.Rules
 					
 					"Slate",
 					"SlateCore",
+					"UnrealEd",
 					"UMG",
-					"PropertyEditor",
 					"StructUtils",
 
 					"RemCommon",
