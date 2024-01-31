@@ -5,11 +5,11 @@
 #include "Components/Widget.h"
 #include "InstancedStruct.h"
 
-namespace Rem::DetailCustomizationUtilities
+namespace Rem::Editor
 {
 
 FAutoConsoleVariable CVarWidgetObjectPathAsWidgetName(
-	TEXT("Rem.DetailCustomizationUtilities.WidgetObjectPathAsWidgetName"), false,
+	TEXT("Rem.Editor.WidgetObjectPathAsWidgetName"), false,
 	TEXT("Show widget object path as widget name"));
 
 FText GetWidgetName(const UWidget* Widget)

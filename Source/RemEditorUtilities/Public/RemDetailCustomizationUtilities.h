@@ -17,10 +17,10 @@
 class IAssetEditorInstance;
 class UWidget;
 
-namespace Rem::DetailCustomizationUtilities
+namespace Rem::Editor
 {
-	using namespace Common::Enum;
-	using namespace Common::PropertyHelper;
+	using namespace Rem::Enum;
+	using namespace Rem::Property;
 
 	inline const FString IndexFormat = TEXT("Index [ {0} ]");
 
@@ -47,7 +47,7 @@ namespace Rem::DetailCustomizationUtilities
 					if (PerObjectValues.Num() > 0)
 					{
 						using RawType = std::remove_pointer_t<ReturnType>;
-						if constexpr (Common::TIsInstance<ReturnType, TSoftObjectPtr>::value)
+						if constexpr (TIsInstance<ReturnType, TSoftObjectPtr>::value)
 						{
 							return ReturnType(PerObjectValues[0]);
 						}
@@ -193,15 +193,13 @@ namespace Rem::DetailCustomizationUtilities
 		TFunctionRef<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, EContainerCombination)>;
 	
 	// forward declaration
-	template<typename PropertyType, typename PropertyBaseClass>
-	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
 	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
 		const FPropertyCustomizationFunctor Predicate,
 		const EContainerCombination ContainerType);
 
 	// forward declaration
-	template<typename PropertyType, typename PropertyBaseClass>
-	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
 	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
 		const FPropertyCustomizationFunctor Predicate,
@@ -216,8 +214,7 @@ namespace Rem::DetailCustomizationUtilities
 	 * @param ContainerType container type of PropertyHandle.
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
-	template<typename PropertyType, typename PropertyBaseClass>
-	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
 	void GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle>& ContainerHandle, IDetailGroup& ContainerGroup,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
@@ -235,7 +232,7 @@ namespace Rem::DetailCustomizationUtilities
 				RemCheckCondition(ElementHandle.IsValid(), continue;);
 
 				// Generate widget for container element
-				Rem::DetailCustomizationUtilities::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
+				Editor::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
 					ContainerGroup, ElementHandle, Predicate, ContainerType);
 			}
 		}
@@ -263,8 +260,7 @@ namespace Rem::DetailCustomizationUtilities
 	 * @param ContainerType container type of PropertyHandle.
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
-	template<typename PropertyType, typename PropertyBaseClass>
-	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
 	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
@@ -332,8 +328,7 @@ namespace Rem::DetailCustomizationUtilities
 	 * @param ContainerType container type of PropertyHandle.
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
-	template<typename PropertyType, typename PropertyBaseClass>
-	requires std::is_base_of_v<FObjectPropertyBase, PropertyType>
+	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
 	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
 		// ReSharper disable once CppPassValueParameterByConstReference
