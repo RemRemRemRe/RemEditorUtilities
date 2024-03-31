@@ -47,7 +47,7 @@ namespace Rem::Editor
 					if (PerObjectValues.Num() > 0)
 					{
 						using RawType = std::remove_pointer_t<ReturnType>;
-						if constexpr (TIsInstance<ReturnType, TSoftObjectPtr>::value)
+						if constexpr (is_instance_v<ReturnType, TSoftObjectPtr>)
 						{
 							return ReturnType(PerObjectValues[0]);
 						}
