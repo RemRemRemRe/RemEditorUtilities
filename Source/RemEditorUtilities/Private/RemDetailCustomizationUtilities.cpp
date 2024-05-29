@@ -8,6 +8,13 @@
 namespace Rem::Editor
 {
 
+const FString IndexFormat{TEXT("Index [ {0} ]")};
+
+const FName AssetComboStyleName{TEXT("PropertyEditor.AssetComboStyle")};
+const FName AssetNameColorName{TEXT("PropertyEditor.AssetName.ColorAndOpacity")};
+
+const FMargin PropertyPadding{2.0f, 0.0f, 2.0f, 0.0f};
+
 FAutoConsoleVariable CVarWidgetObjectPathAsWidgetName(
 	TEXT("Rem.Editor.WidgetObjectPathAsWidgetName"), false,
 	TEXT("Show widget object path as widget name"));

@@ -22,12 +22,12 @@ namespace Rem::Editor
 	using namespace Rem::Enum;
 	using namespace Rem::Property;
 
-	inline const FString IndexFormat = TEXT("Index [ {0} ]");
+	REMEDITORUTILITIES_API extern const FString IndexFormat;
 
-	inline const FName AssetComboStyleName = TEXT("PropertyEditor.AssetComboStyle");
-	inline const FName AssetNameColorName = TEXT("PropertyEditor.AssetName.ColorAndOpacity");
+	REMEDITORUTILITIES_API extern const FName AssetComboStyleName;
+	REMEDITORUTILITIES_API extern const FName AssetNameColorName;
 
-	inline const FMargin PropertyPadding(2.0f, 0.0f, 2.0f, 0.0f);
+	REMEDITORUTILITIES_API extern const FMargin PropertyPadding;
 	
 	REMEDITORUTILITIES_API FText GetWidgetName(const UWidget* Widget);
 	REMEDITORUTILITIES_API FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget);
