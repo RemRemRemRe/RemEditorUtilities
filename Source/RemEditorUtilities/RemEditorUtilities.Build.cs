@@ -7,7 +7,6 @@ namespace UnrealBuildTool.Rules
 	{
 		public RemEditorUtilities(ReadOnlyTargetRules target) : base(target)
 		{
-			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 			ShadowVariableWarningLevel = WarningLevel.Error;
 			IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 			DefaultBuildSettings = BuildSettingsVersion.Latest;
@@ -28,7 +27,6 @@ namespace UnrealBuildTool.Rules
 					"SlateCore",
 					"UnrealEd",
 					"UMG",
-					"StructUtils",
 
 					"RemCommon",
 				}

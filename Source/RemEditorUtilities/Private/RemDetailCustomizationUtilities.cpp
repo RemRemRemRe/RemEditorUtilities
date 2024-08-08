@@ -3,7 +3,7 @@
 
 #include "DetailWidgetRow.h"
 #include "Components/Widget.h"
-#include "InstancedStruct.h"
+#include "StructUtils/InstancedStruct.h"
 
 namespace Rem::Editor
 {
@@ -25,7 +25,7 @@ FText GetWidgetName(const UWidget* Widget)
 	{
 		return FText::GetEmpty();
 	}
-	
+
 	return Widget->IsGeneratedName() ? FText::FromName(Widget->GetFName()) : Widget->GetLabelText();;
 }
 
@@ -35,7 +35,7 @@ FText GetWidgetName(const TSoftObjectPtr<const UWidget>& Widget)
 	{
 		return FText::FromString(Widget.ToString());
 	}
-	
+
 	return GetWidgetName(Widget.Get());
 }
 
@@ -55,7 +55,7 @@ bool IsContainerElementValid(const TSharedPtr<IPropertyHandle>& ElementHandle)
 IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const FName PropertyGroupName)
 {
 	IDetailGroup* PropertyGroup = nullptr;
-	
+
 	if (PropertyGroupName == NAME_None)
 	{
 		// no group property only show up at first layer
@@ -65,7 +65,7 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 	{
 		// add extra property group
 		const FString PropertyGroupString = PropertyGroupName.ToString();
-					
+
 		TArray<FString> SplitCategoryString;
 		const int32 NumCategory = PropertyGroupString.ParseIntoArray(SplitCategoryString, TEXT("|"));
 
@@ -81,24 +81,24 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 		{
 			// remove space from start and end, ensuring category is properly retrieved
 			const FString CurrentCategoryString = SplitCategoryString[CategoryLayer].TrimStartAndEnd();
-				
+
 			const FName CurrentCategoryName(*CurrentCategoryString);
-						
+
 			if (PropertyGroup = ChildGroupLayerMapping[CategoryLayer].FindRef(CurrentCategoryName);
 				!PropertyGroup)
 			{
 				IDetailGroup* ParentGroup = CategoryLayer == 0 ? ChildGroupLayerMapping[0][NAME_None] : LastGroup;
-				
+
 				const FText InLocalizedDisplayName = FText::FromName(CurrentCategoryName);
 				PropertyGroup = &ParentGroup->AddGroup(CurrentCategoryName, InLocalizedDisplayName);
 
 				ChildGroupLayerMapping[CategoryLayer].Add(CurrentCategoryName, PropertyGroup);
 			}
-						
+
 			LastGroup = PropertyGroup;
 		}
 	}
-	
+
 	return PropertyGroup;
 }
 
@@ -107,7 +107,7 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHand
 	const EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
 {
 	using namespace BitOperation;
-	
+
 	DetailPropertyRow
 	.NameContent()
 	[
@@ -141,7 +141,7 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHand
 			// pass bDisplayDefaultPropertyButtons as false to prevent delete button get doubled
 			? PropertyHandle->CreatePropertyValueWidget(false)
 			: Functor(PropertyHandle)
-		]			
+		]
 	];
 }
 
@@ -158,5 +158,5 @@ FString GetPropertyPath(const FProperty* Property)
 	}
 	return PropertyPath.RightChop(Index + 1)/*.Replace(TEXT(":"), TEXT("."))*/;
 }
-	
+
 }
