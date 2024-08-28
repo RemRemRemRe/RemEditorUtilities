@@ -1,5 +1,5 @@
 ﻿
-#include "RemDetailCustomizationUtilities.h"
+#include "RemEditorUtilitiesStatics.h"
 
 #include "DetailWidgetRow.h"
 #include "Components/Widget.h"

@@ -49,11 +49,11 @@ namespace Rem::Editor
 						using RawType = std::remove_pointer_t<ReturnType>;
 						if constexpr (is_instance_v<ReturnType, TSoftObjectPtr>)
 						{
-							return ReturnType(PerObjectValues[0]);
+							return ReturnType(FSoftObjectPath{PerObjectValues[0]});
 						}
 						else if constexpr (std::is_base_of_v<UObject, RawType>)
 						{
-							return TSoftObjectPtr<RawType>(PerObjectValues[0]).Get();
+							return TSoftObjectPtr<RawType>(FSoftObjectPath{PerObjectValues[0]}).Get();
 						}
 					}
 					break;		
@@ -103,11 +103,11 @@ namespace Rem::Editor
 			for (int32 Index = 0; Index < PropertyHandle->GetNumPerObjectValues(); Index++)
 			{
 				// using soft object to get the object path string
-				TSoftObjectPtr<ObjectType> SoftObject(Object);
+				TSoftObjectPtr<const ObjectType> SoftObject(Object);
 				References.Add(SoftObject.ToString());
 			}
 
-			// can't use this to set value from UWidgetBlueprintGeneratedClass::WidgetTree(of UClass property i guess),
+			// can't use this to set value from UWidgetBlueprintGeneratedClass::WidgetTree(of UClass property I guess),
 			// PPF_ParsingDefaultProperties is needed but that is hard coded
 			// @see FPropertyValueImpl::ImportText of @line 402 : FPropertyTextUtilities::PropertyToTextHelper
 			const bool bResult = PropertyHandle->SetPerObjectValues(References) == FPropertyAccess::Result::Success;
@@ -122,7 +122,7 @@ namespace Rem::Editor
 
 	REMEDITORUTILITIES_API
 	/**
-	 * @brief An valid array element property handle would have children num equal to 1
+	 * @brief A valid array element property handle would have children num equal to 1
 	 * @param ElementHandle an array element property handle
 	 * @return true if valid
 	 */
@@ -190,7 +190,7 @@ namespace Rem::Editor
 	}
 
 	using FPropertyCustomizationFunctor =
-		TFunctionRef<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, EContainerCombination)>;
+		TFunction<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, EContainerCombination)>;
 	
 	// forward declaration
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
@@ -323,7 +323,7 @@ namespace Rem::Editor
 	 * @param NumChildren children num of element property handle
 	 * @param ChildGroupLayerMapping layered group name to IDetailGroup mapping.
 	 * Note it must contain the "start point (no category group)" --- "ChildGroupLayerMapping[0][NAME_None]" element
-	 * @param Layer Index of ChildGroupLayerMapping indicates which layer it should resides
+	 * @param Layer Index of ChildGroupLayerMapping indicates which layer it should reside
 	 * @param Predicate property customization predicate
 	 * @param ContainerType container type of PropertyHandle.
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
@@ -410,7 +410,7 @@ namespace Rem::Editor
 				else if (const auto* StructProperty = CastField<FStructProperty>(Property);
 					StructProperty)
 				{
-					// skip instanced struct or it can't show up in details panel
+					// skip instanced struct, or it can't show up in details panel
 					if (!IsInstancedStruct(StructProperty->Struct))
 					{
 						IDetailGroup& ContainerGroup = GenerateContainerHeader(ChildHandle, *PropertyGroup);
@@ -473,26 +473,6 @@ namespace Rem::Editor
 	 * @return 
 	 */
 	FString GetPropertyPath(const FProperty* Property);
-
-	template<typename T>
-	requires std::is_base_of_v<IAssetEditorInstance, T>
-	auto GetAssetEditorInstance(UClass* Class) -> decltype(auto)
-	{
-		if (auto* Blueprint = UBlueprint::GetBlueprintFromClass(Class))
-		{
-			if (IAssetEditorInstance* AssetEditorInstance =
-				GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->FindEditorForAsset(Blueprint, false))
-			{
-				auto* Editor = static_cast<T*>(AssetEditorInstance);
-				RemCheckVariable(Editor);
-
-				return Editor;
-			}
-		}
-
-		return static_cast<T*>(nullptr);
-	}
-
 }
 
 #undef LOCTEXT_NAMESPACE
