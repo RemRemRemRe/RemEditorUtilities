@@ -46,7 +46,7 @@ bool IsInstancedStruct(const UScriptStruct* Struct)
 	return Struct == FInstancedStruct::StaticStruct();
 }
 
-bool IsContainerElementValid(const TSharedPtr<IPropertyHandle>& ElementHandle)
+bool IsContainerElementValid(const TSharedRef<IPropertyHandle>& ElementHandle)
 {
 	// whether the element has valid value
 	uint32 IsElementValid;
@@ -104,7 +104,7 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 	return PropertyGroup;
 }
 
-void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
+void MakeCustomWidgetForProperty(const TSharedRef<IPropertyHandle>& PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
 	// ReSharper disable once CppPassValueParameterByConstReference
 	const Enum::EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
 {
@@ -128,7 +128,7 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHand
 			:
 
 			EnumHasAllFlags(ContainerType, Enum::EContainerCombination::MapKey)
-			? Functor(PropertyHandle->GetKeyHandle())
+			? Functor(PropertyHandle->GetKeyHandle().ToSharedRef())
 			: PropertyHandle->GetKeyHandle()->CreatePropertyValueWidget()
 		]
 	]
@@ -161,4 +161,18 @@ FString GetPropertyPath(const FProperty* Property)
 	return PropertyPath.RightChop(Index + 1)/*.Replace(TEXT(":"), TEXT("."))*/;
 }
 
+FText TryGetText(const FPropertyAccess::Result Result, const TFunctionRef<FText()>& Predicate)
+{
+	switch (Result)
+	{
+	case FPropertyAccess::MultipleValues:
+		return NSLOCTEXT("PropertyEditor", "MultipleValues", "Multiple Values");
+	case FPropertyAccess::Success:
+		return Predicate();
+	default:
+		break;
+	}
+
+	return FText::GetEmpty();
+}
 }

@@ -36,89 +36,60 @@ namespace Rem::Editor
 	}
 
 	template<typename ReturnType>
-	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle>& ChildHandle, int32& OutResult)
+	ReturnType GetCurrentValue(const TSharedRef<IPropertyHandle> ChildHandle, FPropertyAccess::Result& OutResult)
 	{
-		if (ChildHandle.IsValid())
+		switch (TArray<FString> PerObjectValues;
+			OutResult = ChildHandle->GetPerObjectValues(PerObjectValues))
 		{
-			switch (TArray<FString> PerObjectValues;
-				OutResult = ChildHandle->GetPerObjectValues(PerObjectValues))
+			case FPropertyAccess::Success:
 			{
-				case FPropertyAccess::Success:
+				if (PerObjectValues.Num() > 0)
 				{
-					if (PerObjectValues.Num() > 0)
+					using RawType = std::remove_pointer_t<ReturnType>;
+					if constexpr (is_instance_v<ReturnType, TSoftObjectPtr>)
 					{
-						using RawType = std::remove_pointer_t<ReturnType>;
-						if constexpr (is_instance_v<ReturnType, TSoftObjectPtr>)
-						{
-							return ReturnType(FSoftObjectPath{PerObjectValues[0]});
-						}
-						else if constexpr (std::is_base_of_v<UObject, RawType>)
-						{
-							return TSoftObjectPtr<RawType>(FSoftObjectPath{PerObjectValues[0]}).Get();
-						}
+						return ReturnType(FSoftObjectPath{PerObjectValues[0]});
 					}
-					break;
+					else if constexpr (std::is_base_of_v<UObject, RawType>)
+					{
+						return TSoftObjectPtr<RawType>(FSoftObjectPath{PerObjectValues[0]}).Get();
+					}
 				}
-				default:
-					break;
+				break;
 			}
+			default:
+				break;
 		}
 
 		return ReturnType{};
 	}
 
 	template<typename ReturnType>
-	ReturnType GetCurrentValue(const TSharedPtr<IPropertyHandle>& ChildHandle)
+	ReturnType GetCurrentValue(const TSharedRef<IPropertyHandle>& ChildHandle)
 	{
-		int32 Result;
+		FPropertyAccess::Result Result;
 		return GetCurrentValue<ReturnType>(ChildHandle, Result);
 	}
 
-	template<typename ValueType>
-	FText GetCurrentValueText(const TSharedPtr<IPropertyHandle>& ChildHandle, const TFunctionRef<FText (const ValueType&)>& Predicate)
-	{
-		if (ChildHandle.IsValid())
-		{
-			int32 Result;
-			const ValueType Value = GetCurrentValue<ValueType>(ChildHandle, Result);
-			switch (Result)
-			{
-			case FPropertyAccess::MultipleValues:
-				return NSLOCTEXT("PropertyEditor", "MultipleValues", "Multiple Values");
-			case FPropertyAccess::Success:
-				return Predicate(Value);
-			default:
-				break;
-			}
-		}
-
-		return FText::GetEmpty();
-	}
-
 	template <typename ObjectType>
-	bool SetObjectValue(const ObjectType* Object, const TSharedPtr<IPropertyHandle>& PropertyHandle)
+	bool SetObjectValue(const ObjectType* Object, const TSharedRef<IPropertyHandle>& PropertyHandle)
 	{
-		if (PropertyHandle.IsValid())
+		TArray<FString> References;
+		for (int32 Index = 0; Index < PropertyHandle->GetNumPerObjectValues(); Index++)
 		{
-			TArray<FString> References;
-			for (int32 Index = 0; Index < PropertyHandle->GetNumPerObjectValues(); Index++)
-			{
-				// using soft object to get the object path string
-				TSoftObjectPtr<const ObjectType> SoftObject(Object);
-				References.Add(SoftObject.ToString());
-			}
-
-			// can't use this to set value from UWidgetBlueprintGeneratedClass::WidgetTree(of UClass property I guess),
-			// PPF_ParsingDefaultProperties is needed but that is hard coded
-			// @see FPropertyValueImpl::ImportText of @line 402 : FPropertyTextUtilities::PropertyToTextHelper
-			const bool bResult = PropertyHandle->SetPerObjectValues(References) == FPropertyAccess::Result::Success;
-
-			RemEnsureCondition(bResult);
-
-			return bResult;
+			// using soft object to get the object path string
+			TSoftObjectPtr<const ObjectType> SoftObject(Object);
+			References.Add(SoftObject.ToString());
 		}
 
-		return {};
+		// can't use this to set value from UWidgetBlueprintGeneratedClass::WidgetTree(of UClass property I guess),
+		// PPF_ParsingDefaultProperties is needed but that is hard coded
+		// @see FPropertyValueImpl::ImportText of @line 402 : FPropertyTextUtilities::PropertyToTextHelper
+		const bool bResult = PropertyHandle->SetPerObjectValues(References) == FPropertyAccess::Result::Success;
+
+		RemEnsureCondition(bResult);
+
+		return bResult;
 	}
 
 	/**
@@ -130,14 +101,14 @@ namespace Rem::Editor
 	 * @return the reference of  container element group
 	 */
 	template<typename TGroupBuilder>
-	IDetailGroup& GenerateContainerHeader(const TSharedPtr<IPropertyHandle>& ContainerHandle, TGroupBuilder& GroupBuilder,
+	IDetailGroup& GenerateContainerHeader(const TSharedRef<IPropertyHandle>& ContainerHandle, TGroupBuilder& GroupBuilder,
 										  const FSimpleDelegate& OnPropertyValueChanged = {})
 	{
 		const FProperty* ContainerProperty = ContainerHandle->GetProperty();
 		IDetailGroup& ContainerGroup = GroupBuilder.AddGroup(FObjectEditorUtils::GetCategoryFName(ContainerProperty),
 													FObjectEditorUtils::GetCategoryText(ContainerProperty));
 
-		ContainerGroup.HeaderProperty(ContainerHandle.ToSharedRef());
+		ContainerGroup.HeaderProperty(ContainerHandle);
 
 		if (OnPropertyValueChanged.IsBound())
 		{
@@ -152,17 +123,17 @@ namespace Rem::Editor
 	}
 
 	using FPropertyCustomizationFunctor =
-		TFunction<void(TSharedPtr<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, Enum::EContainerCombination)>;
+		TFunction<void(TSharedRef<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, Enum::EContainerCombination)>;
 
 	// forward declaration
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
-	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
+	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedRef<IPropertyHandle>& ElementHandle,
 		const FPropertyCustomizationFunctor Predicate,
 		const Enum::EContainerCombination ContainerType);
 
 	// forward declaration
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
-	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
+	void GenerateWidgetsForNestedElement(const TSharedRef<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
 		const FPropertyCustomizationFunctor Predicate,
 			const Enum::EContainerCombination ContainerType);
@@ -177,7 +148,7 @@ namespace Rem::Editor
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
-	void GenerateWidgetForContainerContent(const TSharedPtr<IPropertyHandle>& ContainerHandle, IDetailGroup& ContainerGroup,
+	void GenerateWidgetForContainerContent(const TSharedRef<IPropertyHandle>& ContainerHandle, IDetailGroup& ContainerGroup,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const Enum::EContainerCombination ContainerType)
@@ -195,7 +166,7 @@ namespace Rem::Editor
 
 				// Generate widget for container element
 				Editor::GenerateWidgetForContainerElement<PropertyType, PropertyBaseClass>(
-					ContainerGroup, ElementHandle, Predicate, ContainerType);
+					ContainerGroup, ElementHandle.ToSharedRef(), Predicate, ContainerType);
 			}
 		}
 		else
@@ -223,7 +194,7 @@ namespace Rem::Editor
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
-	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedPtr<IPropertyHandle>& ElementHandle,
+	void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedRef<IPropertyHandle>& ElementHandle,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
 		const Enum::EContainerCombination ContainerType)
@@ -234,7 +205,7 @@ namespace Rem::Editor
 
 		const auto* StructProperty = CastField<FStructProperty>(ElementHandle->GetProperty());
 
-		if (IDetailPropertyRow& ElementGroupPropertyRow = ElementGroup.HeaderProperty(ElementHandle.ToSharedRef());
+		if (IDetailPropertyRow& ElementGroupPropertyRow = ElementGroup.HeaderProperty(ElementHandle);
 			ContainerType != Enum::EContainerCombination::ContainerItself && !StructProperty)
 		{
 			// generate widget for TMap / TSet / TArray element
@@ -251,7 +222,7 @@ namespace Rem::Editor
 			return;
 		}
 
-		const TSharedPtr<IPropertyHandle> ElementValueHandle = StructProperty ? ElementHandle : ElementHandle->GetChildHandle(0);
+		const auto ElementValueHandle = StructProperty ? ElementHandle : ElementHandle->GetChildHandle(0).ToSharedRef();
 		uint32 NumChildren;
 		ElementValueHandle->GetNumChildren(NumChildren);
 
@@ -291,7 +262,7 @@ namespace Rem::Editor
 	 * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
 	 */
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
-	void GenerateWidgetsForNestedElement(const TSharedPtr<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
+	void GenerateWidgetsForNestedElement(const TSharedRef<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
 		TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
 		// ReSharper disable once CppPassValueParameterByConstReference
 		const FPropertyCustomizationFunctor Predicate,
@@ -299,8 +270,10 @@ namespace Rem::Editor
 	{
 		for (uint32 Index = 0; Index < NumChildren; ++Index)
 		{
-			TSharedPtr<IPropertyHandle> ChildHandle = ElementHandle->GetChildHandle(Index);
-			RemCheckCondition(ChildHandle.IsValid(), continue;);
+			TSharedPtr<IPropertyHandle> ChildHandlePtr = ElementHandle->GetChildHandle(Index);
+			RemCheckCondition(ChildHandlePtr.IsValid(), continue;);
+
+			auto ChildHandle = ChildHandlePtr.ToSharedRef();
 
 			// if this child is a property
 			if (const auto* Property = ChildHandle->GetProperty())
@@ -386,7 +359,7 @@ namespace Rem::Editor
 				}
 
 				// add property row
-				IDetailPropertyRow& WidgetPropertyRow = PropertyGroup->AddPropertyRow(ChildHandle.ToSharedRef());
+				IDetailPropertyRow& WidgetPropertyRow = PropertyGroup->AddPropertyRow(ChildHandle);
 				WidgetPropertyRow.EditCondition(ChildHandle->IsEditable(), {});
 
 				if (bNeedCustomWidget)

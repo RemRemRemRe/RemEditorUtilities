@@ -12,6 +12,10 @@ class UWidget;
 class SWidget;
 template<class T>
 struct TSoftObjectPtr;
+namespace FPropertyAccess
+{
+	enum Result;
+}
 
 namespace Rem::Editor
 {
@@ -31,7 +35,7 @@ namespace Rem::Editor
 	 * @param ElementHandle an array element property handle
 	 * @return true if valid
 	 */
-	REMEDITORUTILITIES_API bool IsContainerElementValid(const TSharedPtr<IPropertyHandle>& ElementHandle);
+	REMEDITORUTILITIES_API bool IsContainerElementValid(const TSharedRef<IPropertyHandle>& ElementHandle);
 
 	/**
 	 * @brief  Build the ChildGroupLayerMapping with given PropertyGroupName, and return the corresponding IDetailGroup pointer
@@ -63,7 +67,7 @@ namespace Rem::Editor
 	REMEDITORUTILITIES_API IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping,
 		const FName PropertyGroupName);
 
-	using FMakePropertyWidgetFunctor = TFunctionRef<TSharedRef<SWidget>(TSharedPtr<IPropertyHandle> PropertyHandle)>;
+	using FMakePropertyWidgetFunctor = TFunctionRef<TSharedRef<SWidget>(TSharedRef<IPropertyHandle> PropertyHandle)>;
 
 	/**
 	 * @brief Make a custom widget for the property no matter whether if it is a container
@@ -72,7 +76,7 @@ namespace Rem::Editor
 	 * @param ContainerType container type of the Property
 	 * @param Functor functor to make custom widget using the PropertyHandle
 	 */
-	REMEDITORUTILITIES_API void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHandle,
+	REMEDITORUTILITIES_API void MakeCustomWidgetForProperty(const TSharedRef<IPropertyHandle>& PropertyHandle,
 		FDetailWidgetRow& DetailPropertyRow, Enum::EContainerCombination ContainerType, FMakePropertyWidgetFunctor Functor);
 
 	/**
@@ -81,4 +85,6 @@ namespace Rem::Editor
 	 * @return 
 	 */
 	REMEDITORUTILITIES_API FString GetPropertyPath(const FProperty* Property);
+
+	REMEDITORUTILITIES_API FText TryGetText(const FPropertyAccess::Result Result, const TFunctionRef<FText()>& Predicate);
 }
