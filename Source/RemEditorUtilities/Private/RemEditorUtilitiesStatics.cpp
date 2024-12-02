@@ -2,7 +2,9 @@
 #include "RemEditorUtilitiesStatics.h"
 
 #include "DetailWidgetRow.h"
+#include "IDetailGroup.h"
 #include "Components/Widget.h"
+#include "Macro/RemAssertionMacros.h"
 #include "StructUtils/InstancedStruct.h"
 
 namespace Rem::Editor
@@ -13,7 +15,7 @@ const FString IndexFormat{TEXT("Index [ {0} ]")};
 const FName AssetComboStyleName{TEXT("PropertyEditor.AssetComboStyle")};
 const FName AssetNameColorName{TEXT("PropertyEditor.AssetName.ColorAndOpacity")};
 
-const FMargin PropertyPadding{2.0f, 0.0f, 2.0f, 0.0f};
+const FVector4f PropertyPadding{2.0f, 0.0f, 2.0f, 0.0f};
 
 FAutoConsoleVariable CVarWidgetObjectPathAsWidgetName(
 	TEXT("Rem.Editor.WidgetObjectPathAsWidgetName"), false,
@@ -104,9 +106,9 @@ IDetailGroup* MakePropertyGroups(TArray<TMap<FName, IDetailGroup*>>& ChildGroupL
 
 void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHandle, FDetailWidgetRow& DetailPropertyRow,
 	// ReSharper disable once CppPassValueParameterByConstReference
-	const EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
+	const Enum::EContainerCombination ContainerType, const FMakePropertyWidgetFunctor Functor)
 {
-	using namespace BitOperation;
+	using namespace Enum::BitOperation;
 
 	DetailPropertyRow
 	.NameContent()
@@ -116,16 +118,16 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHand
 		.Padding(PropertyPadding)
 		.AutoWidth()
 		[
-			ContainerType == EContainerCombination::ContainerItself
-			|| ContainerType == EContainerCombination::Struct
-			|| EnumHasAnyFlags(ContainerType, EContainerCombination::Array)
+			ContainerType == Enum::EContainerCombination::ContainerItself
+			|| ContainerType == Enum::EContainerCombination::Struct
+			|| EnumHasAnyFlags(ContainerType, Enum::EContainerCombination::Array)
 			? PropertyHandle->CreatePropertyNameWidget()
 
-			: ContainerType == EContainerCombination::Set
+			: ContainerType == Enum::EContainerCombination::Set
 			? PropertyHandle->CreatePropertyNameWidget(FText::AsNumber(PropertyHandle->GetIndexInArray()))
 			:
 
-			EnumHasAllFlags(ContainerType, EContainerCombination::MapKey)
+			EnumHasAllFlags(ContainerType, Enum::EContainerCombination::MapKey)
 			? Functor(PropertyHandle->GetKeyHandle())
 			: PropertyHandle->GetKeyHandle()->CreatePropertyValueWidget()
 		]
@@ -137,7 +139,7 @@ void MakeCustomWidgetForProperty(const TSharedPtr<IPropertyHandle>& PropertyHand
 		.Padding(PropertyPadding)
 		.AutoWidth()
 		[
-			ContainerType == EContainerCombination::MapKey
+			ContainerType == Enum::EContainerCombination::MapKey
 			// pass bDisplayDefaultPropertyButtons as false to prevent delete button get doubled
 			? PropertyHandle->CreatePropertyValueWidget(false)
 			: Functor(PropertyHandle)
