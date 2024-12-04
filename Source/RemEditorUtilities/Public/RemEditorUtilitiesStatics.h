@@ -1,4 +1,5 @@
-﻿
+﻿// Copyright RemRemRemRe, All Rights Reserved.
+
 #pragma once
 
 #include "Enum/RemContainerCombination.h"

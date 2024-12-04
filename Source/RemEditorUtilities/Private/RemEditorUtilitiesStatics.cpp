@@ -1,4 +1,5 @@
-﻿
+﻿// Copyright RemRemRemRe, All Rights Reserved.
+
 #include "RemEditorUtilitiesStatics.h"
 
 #include "DetailWidgetRow.h"
