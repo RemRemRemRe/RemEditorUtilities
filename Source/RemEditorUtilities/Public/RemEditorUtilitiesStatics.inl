@@ -124,7 +124,7 @@ namespace Rem::Editor
 	}
 
 	using FPropertyCustomizationFunctor =
-		TFunction<void(TSharedRef<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, Enum::EContainerCombination)>;
+		TFunctionRef<void(TSharedRef<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPropertyRow, Enum::EContainerCombination)>;
 
 	// forward declaration
 	template<Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
