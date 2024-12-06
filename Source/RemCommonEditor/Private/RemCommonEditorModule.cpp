@@ -7,7 +7,11 @@
 #include "GameplayTagsManager.h"
 #include "GameplayTag/RemGameplayTagWithCategory.h"
 #include "PropertyHandle.h"
+#include "Details/RemReflectedFunctionCallDataDetails.h"
+#include "Details/RemReflectedFunctionDataDetails.h"
 #include "Macro/RemAssertionMacros.h"
+#include "Struct/RemReflectedFunctionCallData.h"
+#include "Struct/RemReflectedFunctionData.h"
 
 IRemCommonEditorModule& IRemCommonEditorModule::Get()
 {
@@ -40,10 +44,20 @@ void FRemCommonEditorModule::StartupModule()
 
 	DelegateHandle = UGameplayTagsManager::Get().OnGetCategoriesMetaFromPropertyHandle.AddStatic(
 		&ThisClass::OnGetCategoriesMetaFromPropertyHandle);
+
+	auto& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.RegisterCustomPropertyTypeLayout(FRemReflectedFunctionCallData::StaticStruct()->GetFName(),
+		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FRemReflectedFunctionCallDataDetails::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout(FRemReflectedFunctionData::StaticStruct()->GetFName(),
+		FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FRemReflectedFunctionDataDetails::MakeInstance));
 }
 
 void FRemCommonEditorModule::ShutdownModule()
 {
+	auto& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionData::StaticStruct()->GetFName());
+	PropertyModule.UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionCallData::StaticStruct()->GetFName());
+
 	if (auto* GameplayTagsManager = UGameplayTagsManager::GetIfAllocated())
 	{
 		GameplayTagsManager->OnGetCategoriesMetaFromPropertyHandle.Remove(DelegateHandle);

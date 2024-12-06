@@ -40,7 +40,7 @@ static TSharedRef<SWidget> GetPopupContent(const TSharedRef<SComboButton> Widget
 	TArray<ItemType>* ListItemsSource,
 	typename SListView<ItemType>::FOnSelectionChanged OnSelectionChanged,
 	typename SListView<ItemType>::FOnGenerateRow OnGenerateRow,
-	FunctorGetFGetCurrentValue /*TFunction<ItemType()>*/ GetCurrentValue,
+	FunctorGetFGetCurrentValue /*TFunction<ItemType()>*/ MakeCurrentListItem,
 	FunctorGetFOnTextChanged /*TFunction<FOnTextChanged(TSharedRef<SListView<ItemType>> ListView)>*/ GetOnTextChanged)
 {
 	using namespace Rem::Editor;
@@ -63,7 +63,7 @@ static TSharedRef<SWidget> GetPopupContent(const TSharedRef<SComboButton> Widget
 		// Ensure no filter is applied at the time the menu opens
 		OnTextChanged.Execute(FText::GetEmpty());
 
-		WidgetListView->SetSelection(GetCurrentValue());
+		WidgetListView->SetSelection(MakeCurrentListItem());
 
 		TSharedPtr<SSearchBox> SearchBox;
 
