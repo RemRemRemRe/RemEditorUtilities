@@ -5,7 +5,10 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "PropertyCustomizationHelpers.h"
+#include "PropertyRestriction.h"
 #include "RemEditorUtilitiesStatics.inl"
+#include "ClassFilter/RemEditorUtilitiesClassFilter.h"
 #include "Macro/RemAssertionMacros.h"
 #include "Struct/RemReflectedFunctionCallData.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -38,6 +41,26 @@ void FRemReflectedFunctionCallDataDetails::CustomizeHeader(const TSharedRef<IPro
 	const auto FunctionNamePropertyHandle = FunctionDataPropertyHandle->GetChildHandle(
 		FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionName)}, false);
 	FunctionNamePropertyHandle->SetOnPropertyValueChangedWithData(TDelegate<void(const FPropertyChangedEvent&)>::CreateSP(this, &ThisClass::OnFunctionNameChanged));
+
+	const auto FunctionOwnerClassPropertyHandle = FunctionDataPropertyHandle->GetChildHandle(
+		FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionOwnerClass)}, false);
+
+	// sync useful meta data from outer
+	const auto AllowedClassesKey{FName{TEXTVIEW("AllowedClasses")}};
+	const auto DisallowedClassesKey{FName{TEXTVIEW("DisallowedClasses")}};
+	FunctionOwnerClassPropertyHandle->SetInstanceMetaData(DisallowedClassesKey, FunctionCallDataPropertyHandle->GetMetaData(DisallowedClassesKey));
+
+	static auto RestrictReason = NSLOCTEXT("RemReflectedFunctionCallData", "PassingClassFilter", "Passing meta data of class filter to FunctionOwnerClass");
+
+	const auto Restriction = MakeShared<FPropertyRestriction>(RestrictReason);
+	const auto ClassFilter = MakeShared<FRemEditorUtilitiesClassFilter>();
+	ClassFilter->AllowedClasses.Append({PropertyCustomizationHelpers::GetClassesFromMetadataString(
+		FunctionCallDataPropertyHandle->GetMetaData(AllowedClassesKey))});
+	ClassFilter->DisallowedClasses.Append({PropertyCustomizationHelpers::GetClassesFromMetadataString(
+		FunctionCallDataPropertyHandle->GetMetaData(DisallowedClassesKey))});
+
+	Restriction->AddClassFilter(ClassFilter);
+	FunctionOwnerClassPropertyHandle->AddRestriction(Restriction);
 }
 
 void FRemReflectedFunctionCallDataDetails::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle,
