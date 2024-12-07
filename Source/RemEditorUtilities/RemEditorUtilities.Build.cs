@@ -27,6 +27,7 @@ namespace UnrealBuildTool.Rules
 					"SlateCore",
 					"UnrealEd",
 					"UMG",
+					"ClassViewer",
 
 					"RemCommon",
 				}
