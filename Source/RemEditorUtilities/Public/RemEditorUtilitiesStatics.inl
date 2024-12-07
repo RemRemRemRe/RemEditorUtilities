@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "RemEditorUtilitiesStatics.h"
+#include "Enum/RemContainerCombination.h"
+
 #include "Editor.h"
 #include "Subsystems/AssetEditorSubsystem.h"
 
@@ -387,5 +390,18 @@ namespace Rem::Editor
 				}
 			}
 		}
+	}
+
+	template <Concepts::has_static_struct StructType>
+	StructType* GetStructPtr(const TSharedRef<IPropertyHandle> PropertyHandle)
+	{
+		const auto* StructProperty = CastField<FStructProperty>(PropertyHandle->GetProperty());
+		RemCheckCondition(StructProperty && StructProperty->Struct == StructType::StaticStruct(), return {};);
+
+		void* StructPtr{};
+		PropertyHandle->GetValueData(StructPtr);
+		RemCheckVariable(StructPtr, return {};);
+
+		return static_cast<StructType*>(StructPtr);
 	}
 }
