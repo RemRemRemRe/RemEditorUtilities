@@ -7,6 +7,7 @@
 #include "IDetailChildrenBuilder.h"
 #include "RemEditorUtilitiesComboButton.inl"
 #include "RemEditorUtilitiesStatics.h"
+#include "RemEditorUtilitiesStatics.inl"
 #include "Macro/RemAssertionMacros.h"
 #include "Misc/AssertionMacros.h"
 #include "Struct/RemReflectedFunctionCallData.h"
@@ -29,7 +30,9 @@ void FRemReflectedFunctionDataDetails::CustomizeHeader(TSharedRef<IPropertyHandl
 void FRemReflectedFunctionDataDetails::CustomizeChildren(const TSharedRef<IPropertyHandle> StructPropertyHandle,
 	IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
-	FunctionOwnerClassPropertyHandle = StructPropertyHandle->GetChildHandle(
+	FunctionDataPropertyHandle = StructPropertyHandle;
+
+	const auto FunctionOwnerClassPropertyHandle = StructPropertyHandle->GetChildHandle(
 		FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionOwnerClass)}, false);
 
 	StructBuilder.AddProperty(FunctionOwnerClassPropertyHandle.ToSharedRef());
@@ -94,28 +97,30 @@ void FRemReflectedFunctionDataDetails::CustomizeChildren(const TSharedRef<IPrope
 void FRemReflectedFunctionDataDetails::OnFilterTextChanged(const FText& InFilterText,
 	const TSharedRef<IPropertyHandle> FilterTextPropertyHandle, const TSharedRef<SListView<FListViewItemType>> WidgetListView)
 {
-	const UObject* FunctionOwnerClassObject{};
-	RemCheckCondition(FunctionOwnerClassPropertyHandle->GetValue(FunctionOwnerClassObject) == FPropertyAccess::Success);
+	auto* FunctionData{Rem::Editor::GetStructPtr<FRemReflectedFunctionData>(FunctionDataPropertyHandle.ToSharedRef())};
+	RemCheckVariable(FunctionData, return;);
 
-	if (auto* FunctionOwnerClass = Cast<UClass>(FunctionOwnerClassObject))
+	if (!FunctionData->FunctionOwnerClass)
 	{
-		TArray<FName> FunctionNames;
-		FunctionOwnerClass->GenerateFunctionList(FunctionNames);
+		return;
+	}
 
-		const auto& CurrentFilterString = InFilterText.ToString();
+	TArray<FName> FunctionNames;
+	FunctionData->FunctionOwnerClass->GenerateFunctionList(FunctionNames);
 
-		ListViewItems.Reset();
-		for (const auto& FunctionName : FunctionNames)
+	const auto& CurrentFilterString = InFilterText.ToString();
+
+	ListViewItems.Reset();
+	for (const auto& FunctionName : FunctionNames)
+	{
+		if (!CurrentFilterString.IsEmpty() && !FunctionName.ToString().Contains(CurrentFilterString))
 		{
-			if (!CurrentFilterString.IsEmpty() && (!FunctionName.IsValid() || !FunctionName.ToString().Contains(CurrentFilterString)))
-			{
-				continue;
-			}
-
-			ListViewItems.Add(MakeShared<FName>(FunctionName));
+			continue;
 		}
 
-		ListViewItems.Shrink();
-		WidgetListView->RequestListRefresh();
+		ListViewItems.Add(MakeShared<FName>(FunctionName));
 	}
+
+	ListViewItems.Shrink();
+	WidgetListView->RequestListRefresh();
 }

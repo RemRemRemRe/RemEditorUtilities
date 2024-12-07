@@ -9,7 +9,7 @@ class SListView;
 
 class REMCOMMONEDITOR_API FRemReflectedFunctionDataDetails : public IPropertyTypeCustomization
 {
-	TSharedPtr<IPropertyHandle> FunctionOwnerClassPropertyHandle;
+	TSharedPtr<IPropertyHandle> FunctionDataPropertyHandle;
 	TArray<TSharedPtr<FName>> ListViewItems;
 
 public:
