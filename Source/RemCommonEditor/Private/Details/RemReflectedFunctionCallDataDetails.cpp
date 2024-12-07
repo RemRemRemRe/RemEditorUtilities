@@ -5,8 +5,12 @@
 
 #include "DetailWidgetRow.h"
 #include "IDetailChildrenBuilder.h"
+#include "RemEditorUtilitiesStatics.inl"
 #include "Macro/RemAssertionMacros.h"
 #include "Struct/RemReflectedFunctionCallData.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Macro/RemLogMacros.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 TSharedRef<IPropertyTypeCustomization> FRemReflectedFunctionCallDataDetails::MakeInstance()
 {
@@ -52,15 +56,19 @@ void FRemReflectedFunctionCallDataDetails::OnFunctionNameChanged(const FProperty
 {
 	RemCheckVariable(FunctionCallDataPropertyHandle, return;);
 
-	const auto* StructProperty = CastField<FStructProperty>(FunctionCallDataPropertyHandle ->GetProperty());
-	RemCheckCondition(StructProperty && StructProperty->Struct == FRemReflectedFunctionCallData::StaticStruct(), return;);
+	auto* FunctionCallData{Rem::Editor::GetStructPtr<FRemReflectedFunctionCallData>(FunctionCallDataPropertyHandle.ToSharedRef())};
+	RemCheckVariable(FunctionCallData, return;);
 
-	void* StructPtr{};
-	FunctionCallDataPropertyHandle->GetValueData(StructPtr);
-	RemCheckVariable(StructPtr, return;);
+	const auto SavedFunctionName{FunctionCallData->FunctionData.FunctionName};
+	FunctionCallData->TryFillParameters();
 
-	const TStructView<FRemReflectedFunctionCallData> DataView{static_cast<uint8*>(StructPtr)};
-	RemCheckVariable(DataView, return;);
-
-	DataView.Get().TryFillParameters();
+	if (bool bFunctionNameGotRest = !SavedFunctionName.IsNone() && FunctionCallData->FunctionData.FunctionName.IsNone())
+	{
+		FNotificationInfo Info(NSLOCTEXT("RemReflectedFunctionCallData", "FunctionIsNotSupported", "Parameter of selected function is not supported"));
+		Info.bUseThrobber = true;
+		Info.Image = FAppStyle::GetBrush(FName{TEXTVIEW("MessageLog.Warning")});
+		Info.FadeOutDuration = 4.0f;
+		Info.ExpireDuration = Info.FadeOutDuration;
+		FSlateNotificationManager::Get().AddNotification(Info);
+	}
 }
