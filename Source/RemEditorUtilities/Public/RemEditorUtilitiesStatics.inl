@@ -13,6 +13,7 @@
 #include "Macro/RemAssertionMacros.h"
 #include "ObjectEditorUtils.h"
 #include "PropertyHandle.h"
+#include "Engine/Blueprint.h"
 #include "Templates/RemPropertyHelper.h"
 #include "Templates/RemIsInstance.h"
 
