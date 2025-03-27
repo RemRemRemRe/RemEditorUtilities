@@ -16,8 +16,7 @@ public class RemEditorUtilities : ModuleRules
 		bUseUnity = false;
 		
 		PrivateDependencyModuleNames.AddRange(
-			new[]
-			{
+			[
 				"Core",
 				"CoreUObject",
 				"Engine",
@@ -29,7 +28,7 @@ public class RemEditorUtilities : ModuleRules
 				"ClassViewer",
 				
 				"RemCommon",
-			}
+			]
 		);
 	}
 }
