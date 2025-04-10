@@ -68,7 +68,7 @@ void FRemReflectedFunctionCallDataDetails::CustomizeChildren(TSharedRef<IPropert
 {
 	uint32 ChildrenNum{};
 	StructPropertyHandle->GetNumChildren(ChildrenNum);
-	for (int Index = 0; Index < ChildrenNum; ++Index)
+	for (uint32 Index = 0; Index < ChildrenNum; ++Index)
 	{
 		auto ChildHandle = StructPropertyHandle->GetChildHandle(Index);
 		StructBuilder.AddProperty(ChildHandle.ToSharedRef());
