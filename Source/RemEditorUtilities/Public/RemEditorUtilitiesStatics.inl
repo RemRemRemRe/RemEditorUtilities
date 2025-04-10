@@ -19,8 +19,7 @@
 
 namespace Rem::Editor
 {
-	template<typename T>
-	requires std::is_base_of_v<IAssetEditorInstance, T>
+	template<std::derived_from<IAssetEditorInstance> T>
 	T* GetAssetEditorInstance(UClass* Class)
 	{
 		auto* Blueprint = UBlueprint::GetBlueprintFromClass(Class);
@@ -55,7 +54,7 @@ namespace Rem::Editor
 					{
 						return ReturnType(FSoftObjectPath{PerObjectValues[0]});
 					}
-					else if constexpr (std::is_base_of_v<UObject, RawType>)
+					else if constexpr (std::derived_from<RawType, UObject>)
 					{
 						return TSoftObjectPtr<RawType>(FSoftObjectPath{PerObjectValues[0]}).Get();
 					}
