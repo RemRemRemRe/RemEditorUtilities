@@ -3,7 +3,6 @@
 #include "RemCommonEditorModule.h"
 
 #include "Modules/ModuleManager.h"
-#include "RemConcepts.h"
 #include "GameplayTagsManager.h"
 #include "GameplayTag/RemGameplayTagWithCategory.h"
 #include "PropertyHandle.h"
@@ -72,11 +71,14 @@ void FRemCommonEditorModule::ShutdownModule()
 void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TSharedPtr<IPropertyHandle> PropertyHandle,
 	FString& OutCategoryString)
 {
+    RemCheckVariable(PropertyHandle, return;);
+    
 	//static_assert(Rem::Concepts::has_tag<FRemGameplayTagWithCategory>, "Tag member of FRemGameplayTagWithCategory is missing!");
-	const auto TagPropertyName = FName{TEXTVIEW("Tag")};
+    static const auto TagPropertyName = FName{TEXTVIEW("Tag")};
 
 	if (const auto* Property = PropertyHandle->GetProperty();
-		Property->GetFName() == TagPropertyName && Property->GetOwnerStruct() == FRemGameplayTagWithCategory::StaticStruct())
+		Property && Property->GetFName() == TagPropertyName
+		&& Property->GetOwnerStruct() == FRemGameplayTagWithCategory::StaticStruct())
 	{
 		void* OutAddress = nullptr;
 		RemCheckCondition(PropertyHandle->GetParentHandle()->GetValueData(OutAddress) == FPropertyAccess::Success, return;)
