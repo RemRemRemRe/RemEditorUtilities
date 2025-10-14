@@ -8,6 +8,7 @@
 #include "PropertyHandle.h"
 #include "Details/RemReflectedFunctionCallDataDetails.h"
 #include "Details/RemReflectedFunctionDataDetails.h"
+#include "GameplayTag/RemGameplayTagArray.h"
 #include "Macro/RemAssertionMacros.h"
 #include "Struct/RemReflectedFunctionCallData.h"
 #include "Struct/RemReflectedFunctionData.h"
@@ -71,13 +72,14 @@ void FRemCommonEditorModule::ShutdownModule()
 void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TSharedPtr<IPropertyHandle> PropertyHandle,
 	FString& OutCategoryString)
 {
+	static_assert(sizeof(FRemGameplayTagWithCategory::Tag), "Tag member of FRemGameplayTagWithCategory is missing!");
+
     RemCheckVariable(PropertyHandle, return;);
     
-	//static_assert(Rem::Concepts::has_tag<FRemGameplayTagWithCategory>, "Tag member of FRemGameplayTagWithCategory is missing!");
-    static const auto TagPropertyName = FName{TEXTVIEW("Tag")};
+    const auto* Property = PropertyHandle->GetProperty();
+    RemCheckVariable(Property, return;);
 
-	if (const auto* Property = PropertyHandle->GetProperty();
-		Property && Property->GetFName() == TagPropertyName
+	if (Property->GetFName() == GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemGameplayTagWithCategory, Tag)
 		&& Property->GetOwnerStruct() == FRemGameplayTagWithCategory::StaticStruct())
 	{
 		void* OutAddress = nullptr;
