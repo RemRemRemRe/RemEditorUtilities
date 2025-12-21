@@ -108,13 +108,31 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
             }
 
             if (const auto* StructProperty = CastField<FStructProperty>(Parent->GetProperty());
-                StructProperty && StructProperty->Struct == FRemGameplayTagArray::StaticStruct())
+                StructProperty)
             {
-                void* OutAddress = nullptr;
-                RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;)
-            
-                GameplayTagWithCategory = static_cast<const FRemGameplayTagArray*>(OutAddress);
-                break;
+                if (StructProperty->Struct == FRemGameplayTagArray::StaticStruct())
+                {
+                    void* OutAddress = nullptr;
+                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;)
+                    
+                    GameplayTagWithCategory = static_cast<const FRemGameplayTagArray*>(OutAddress);
+                    break;
+                }
+                
+                if (StructProperty->Struct == FInstancedStruct::StaticStruct())
+                {
+                    void* OutAddress = nullptr;
+                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;)
+                    
+                    if (auto* InstancedStruct = static_cast<const FInstancedStruct*>(OutAddress))
+                    {
+                        if (GameplayTagWithCategory = InstancedStruct->GetPtr<const FRemGameplayTagArray>();
+                            GameplayTagWithCategory)
+                        {
+                            break;
+                        }
+                    }
+                }
             }
         }
         while (true);
