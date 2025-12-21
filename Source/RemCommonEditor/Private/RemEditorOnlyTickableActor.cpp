@@ -20,6 +20,8 @@ ARemEditorOnlyTickableActor::ARemEditorOnlyTickableActor()
 {
     PrimaryActorTick.bCanEverTick = true;
     // PrimaryActorTick.bStartWithTickEnabled = true; // set on parent
+    
+    bIsEditorOnlyActor = true;
 }
 
 void ARemEditorOnlyTickableActor::PostActorCreated()
