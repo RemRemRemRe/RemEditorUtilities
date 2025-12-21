@@ -6,7 +6,7 @@ public class RemCommonEditor : ModuleRules
 {
 	public RemCommonEditor(ReadOnlyTargetRules target) : base(target)
 	{
-		CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Error;
+        CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Error;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		DefaultBuildSettings = BuildSettingsVersion.Latest;
 		CppStandard = CppStandardVersion.EngineDefault;
@@ -27,6 +27,7 @@ public class RemCommonEditor : ModuleRules
 				"Slate",
 				"SlateCore",
 				"InputCore",
+                "UnrealEd",
 				
 				"RemCommon",
 				"RemEditorUtilities",
