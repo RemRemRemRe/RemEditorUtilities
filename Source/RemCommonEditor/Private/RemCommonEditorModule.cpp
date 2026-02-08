@@ -56,9 +56,11 @@ void FRemCommonEditorModule::StartupModule()
 
 void FRemCommonEditorModule::ShutdownModule()
 {
-	auto& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionData::StaticStruct()->GetFName());
-	PropertyModule.UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionCallData::StaticStruct()->GetFName());
+    auto* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor");
+    RemCheckVariable(PropertyModule, return;, REM_NO_LOG_OR_ASSERTION);
+    
+	PropertyModule->UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionData::StaticStruct()->GetFName());
+	PropertyModule->UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionCallData::StaticStruct()->GetFName());
 
 	if (auto* GameplayTagsManager = UGameplayTagsManager::GetIfAllocated())
 	{
