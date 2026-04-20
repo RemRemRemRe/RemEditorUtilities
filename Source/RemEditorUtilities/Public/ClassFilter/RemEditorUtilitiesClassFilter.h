@@ -8,14 +8,15 @@
 
 struct REMEDITORUTILITIES_API FRemEditorUtilitiesClassFilter : IClassViewerFilter
 {
-	TSet<const UClass*> AllowedClasses;
-	TSet<const UClass*> DisallowedClasses;
-	EClassFlags DisallowedClassFlags{};
+    TSet<const UClass*> AllowedClasses;
+    TSet<const UClass*> DisallowedClasses;
+    EClassFlags DisallowedClassFlags{};
 
 protected:
-	virtual bool IsClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const UClass* InClass,
-		TSharedRef< FClassViewerFilterFuncs > InFilterFuncs ) override;
+    virtual bool IsClassAllowed(const FClassViewerInitializationOptions& InInitOptions, const UClass* InClass,
+        TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override;
 
-	virtual bool IsUnloadedClassAllowed(const FClassViewerInitializationOptions& InInitOptions,
-		const TSharedRef< const IUnloadedBlueprintData > InUnloadedClassData, TSharedRef< FClassViewerFilterFuncs > InFilterFuncs) override;
+    virtual bool IsUnloadedClassAllowed(const FClassViewerInitializationOptions& InInitOptions,
+        const TSharedRef<const IUnloadedBlueprintData> InUnloadedClassData,
+        TSharedRef<FClassViewerFilterFuncs> InFilterFuncs) override;
 };

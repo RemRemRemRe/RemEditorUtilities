@@ -15,18 +15,19 @@ class REMCOMMONEDITOR_API ARemEditorOnlyTickableActor : public AActor
 
     // TSharedPtr<FRemEditorTickableHelper> EditorTickableHelper;
     FTimerHandle EditorTickHandle{};
+
 protected:
-    
     ARemEditorOnlyTickableActor();
-    
+
     friend FRemEditorTickableHelper;
-    
+
     virtual void PostActorCreated() override;
     virtual void Destroyed() override;
-    
+
     virtual void EditorTick(float DeltaSeconds);
-    
-    UFUNCTION(BlueprintImplementableEvent, DisplayName = "EditorTick", Category = RemEditorOnlyTickableActor, CallInEditor)
+
+    UFUNCTION(BlueprintImplementableEvent, DisplayName = "EditorTick", Category = RemEditorOnlyTickableActor,
+        CallInEditor)
     void BP_EditorTick(float DeltaSeconds);
-    
+
 };

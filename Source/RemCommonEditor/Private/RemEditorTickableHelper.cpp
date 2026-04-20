@@ -8,10 +8,10 @@
 #include "Macro/RemAssertionMacros.h"
 
 
-namespace 
+namespace
 {
-    TAutoConsoleVariable CVarEnableEditorTickable(TEXT("Rem.Editor.TickableHelper.Enable"), true,
-        TEXT(""));
+TAutoConsoleVariable CVarEnableEditorTickable(TEXT("Rem.Editor.TickableHelper.Enable"), true,
+    TEXT(""));
 }
 
 FRemEditorTickableHelper::FRemEditorTickableHelper(ARemEditorOnlyTickableActor* Actor)

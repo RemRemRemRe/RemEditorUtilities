@@ -8,9 +8,8 @@
 UCLASS()
 class REMCOMMONEDITOR_API URemCommonEditorStatics : public UBlueprintFunctionLibrary
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
-public:
 };
 
 namespace Rem::CommonEditor
