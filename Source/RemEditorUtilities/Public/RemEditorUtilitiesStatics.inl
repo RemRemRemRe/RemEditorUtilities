@@ -15,7 +15,7 @@
 #include "PropertyHandle.h"
 #include "Engine/Blueprint.h"
 #include "Templates/RemPropertyHelper.h"
-#include "Templates/RemIsInstance.h"
+#include "Templates/RemInstanceOf.h"
 
 namespace Rem::Editor
 {
@@ -51,7 +51,7 @@ ReturnType GetCurrentValue(const TSharedRef<IPropertyHandle> ChildHandle,
             if (PerObjectValues.Num() > 0)
             {
                 using RawType = std::remove_pointer_t<ReturnType>;
-                if constexpr (is_instance_v<ReturnType, TSoftObjectPtr>)
+                if constexpr (CInstanceOf<ReturnType, TSoftObjectPtr>)
                 {
                     return ReturnType(FSoftObjectPath{PerObjectValues[0]});
                 }
@@ -132,13 +132,13 @@ TFunctionRef<void(TSharedRef<IPropertyHandle> Handle, FDetailWidgetRow& WidgetPr
     Enum::EContainerCombination)>;
 
 // forward declaration
-template <Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
+template <CFObjectPropertyBase PropertyType, typename PropertyBaseClass>
 void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedRef<IPropertyHandle>& ElementHandle,
     const FPropertyCustomizationFunctor Predicate,
     const Enum::EContainerCombination ContainerType);
 
 // forward declaration
-template <Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
+template <CFObjectPropertyBase PropertyType, typename PropertyBaseClass>
 void GenerateWidgetsForNestedElement(const TSharedRef<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
     TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
     const FPropertyCustomizationFunctor Predicate,
@@ -153,7 +153,7 @@ void GenerateWidgetsForNestedElement(const TSharedRef<IPropertyHandle>& ElementH
  * @param ContainerType container type of PropertyHandle.
  * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
  */
-template <Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
+template <CFObjectPropertyBase PropertyType, typename PropertyBaseClass>
 void GenerateWidgetForContainerContent(const TSharedRef<IPropertyHandle>& ContainerHandle,
     IDetailGroup& ContainerGroup,
     // ReSharper disable once CppPassValueParameterByConstReference
@@ -203,7 +203,7 @@ void GenerateWidgetForContainerContent(const TSharedRef<IPropertyHandle>& Contai
  * @param ContainerType container type of PropertyHandle.
  * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
  */
-template <Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
+template <CFObjectPropertyBase PropertyType, typename PropertyBaseClass>
 void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedRef<IPropertyHandle>& ElementHandle,
     // ReSharper disable once CppPassValueParameterByConstReference
     const FPropertyCustomizationFunctor Predicate,
@@ -273,7 +273,7 @@ void GenerateWidgetForContainerElement(IDetailGroup& ParentGroup, const TSharedR
  * @param ContainerType container type of PropertyHandle.
  * use it to identify whether the PropertyHandle is the container itself or one of the child handle of the original container and its container type
  */
-template <Concepts::is_object_property_base PropertyType, typename PropertyBaseClass>
+template <CFObjectPropertyBase PropertyType, typename PropertyBaseClass>
 void GenerateWidgetsForNestedElement(const TSharedRef<IPropertyHandle>& ElementHandle, const uint32 NumChildren,
     TArray<TMap<FName, IDetailGroup*>>& ChildGroupLayerMapping, const uint32 Layer,
     // ReSharper disable once CppPassValueParameterByConstReference
@@ -408,7 +408,7 @@ void GenerateWidgetsForNestedElement(const TSharedRef<IPropertyHandle>& ElementH
     }
 }
 
-template <Concepts::has_static_struct StructType>
+template <CHasStaticStruct StructType>
 StructType* GetStructPtr(const TSharedRef<IPropertyHandle> PropertyHandle)
 {
     const auto* StructProperty = CastField<FStructProperty>(PropertyHandle->GetProperty());
