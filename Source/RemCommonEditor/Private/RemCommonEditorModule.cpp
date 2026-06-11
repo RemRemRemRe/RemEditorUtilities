@@ -103,7 +103,8 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
     {
         auto Parent{PropertyHandle};
         const FRemGameplayTagArray* GameplayTagWithCategory{};
-        do
+
+        while (true)
         {
             Parent = Parent->GetParentHandle();
             if (!Parent.IsValid())
@@ -139,7 +140,6 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
                 }
             }
         }
-        while (true);
 
         RemCheckVariable(GameplayTagWithCategory, return;);
 
