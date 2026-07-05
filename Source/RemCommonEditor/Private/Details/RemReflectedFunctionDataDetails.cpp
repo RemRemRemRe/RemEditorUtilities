@@ -33,12 +33,12 @@ void FRemReflectedFunctionDataDetails::CustomizeChildren(const TSharedRef<IPrope
     FunctionDataPropertyHandle = StructPropertyHandle;
 
     const auto FunctionOwnerClassPropertyHandle = StructPropertyHandle->GetChildHandle(
-        FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionOwnerClass)}, false);
+        FName{GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionOwnerClass)}, false);
 
     StructBuilder.AddProperty(FunctionOwnerClassPropertyHandle.ToSharedRef());
 
     const auto FunctionNameClassPropertyHandle = StructPropertyHandle->GetChildHandle(
-        FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionName)}, false);
+        FName{GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionName)}, false);
 
     const auto FunctionNameClassPropertyHandleRef = FunctionNameClassPropertyHandle.ToSharedRef();
     auto& FunctionNameRow                         = StructBuilder.AddProperty(FunctionNameClassPropertyHandleRef);

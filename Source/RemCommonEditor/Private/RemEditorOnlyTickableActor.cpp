@@ -28,7 +28,7 @@ void ARemEditorOnlyTickableActor::PostActorCreated()
 {
     Super::PostActorCreated();
 
-    RemCheckCondition(CVarEnableEditorTickableActor.GetValueOnGameThread(), return;, REM_NO_LOG_OR_ASSERTION);
+    RemCheckCondition(REM_NO_ASSERTION, CVarEnableEditorTickableActor.GetValueOnGameThread(), return;);
 
     auto* World = GetWorld();
     RemCheckVariable(World, return;);
@@ -68,7 +68,7 @@ void ARemEditorOnlyTickableActor::EditorTick(const float DeltaSeconds)
     auto* World = GetWorld();
     RemCheckVariable(World, return;);
 
-    RemCheckCondition(CVarEnableEditorTickableActor.GetValueOnGameThread(), return;, REM_NO_LOG_OR_ASSERTION);
+    RemCheckCondition(REM_NO_ASSERTION, CVarEnableEditorTickableActor.GetValueOnGameThread(), return;);
 
     BP_EditorTick(FMath::Max(World->GetDeltaSeconds(), DeltaSeconds));
 }

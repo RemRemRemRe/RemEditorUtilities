@@ -28,6 +28,7 @@ bool IRemCommonEditorModule::IsAvailable()
 
 class FRemCommonEditorModule final : public IRemCommonEditorModule
 {
+public:
     /** IModuleInterface implementation */
     virtual void StartupModule() override;
     virtual void ShutdownModule() override;
@@ -58,7 +59,7 @@ void FRemCommonEditorModule::StartupModule()
 void FRemCommonEditorModule::ShutdownModule()
 {
     auto* PropertyModule = FModuleManager::GetModulePtr<FPropertyEditorModule>("PropertyEditor");
-    RemCheckVariable(PropertyModule, return;, REM_NO_LOG_OR_ASSERTION);
+    RemCheckVariable(PropertyModule, return;);
 
     PropertyModule->UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionData::StaticStruct()->GetFName());
     PropertyModule->UnregisterCustomPropertyTypeLayout(FRemReflectedFunctionCallData::StaticStruct()->GetFName());
@@ -84,12 +85,12 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
     const auto* Property = PropertyHandle->GetProperty();
     RemCheckVariable(Property, return;);
 
-    if (Property->GetFName() == GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemGameplayTagWithCategory, Tag)
+    if (Property->GetFName() == GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemGameplayTagWithCategory, Tag)
         && Property->GetOwnerStruct() == FRemGameplayTagWithCategory::StaticStruct())
     {
         void* OutAddress = nullptr;
         RemCheckCondition(PropertyHandle->GetParentHandle()->GetValueData(OutAddress) == FPropertyAccess::Success,
-            return;)
+            return;);
 
         if (const auto* GameplayTagWithCategory = static_cast<const FRemGameplayTagWithCategory*>(OutAddress);
             GameplayTagWithCategory && GameplayTagWithCategory->GetCategory().IsValid())
@@ -99,7 +100,7 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
     }
     else if (const FStructProperty* Field = CastField<FStructProperty>(Property);
         Field && Field->Struct == FGameplayTag::StaticStruct()
-        && Field->GetFName() == GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemGameplayTagArray, Tags))
+        && Field->GetFName() == GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemGameplayTagArray, Tags))
     {
         auto Parent{PropertyHandle};
         const FRemGameplayTagArray* GameplayTagWithCategory{};
@@ -118,7 +119,7 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
                 if (StructProperty->Struct == FRemGameplayTagArray::StaticStruct())
                 {
                     void* OutAddress = nullptr;
-                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;)
+                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;);
 
                     GameplayTagWithCategory = static_cast<const FRemGameplayTagArray*>(OutAddress);
                     break;
@@ -127,7 +128,7 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
                 if (StructProperty->Struct == FInstancedStruct::StaticStruct())
                 {
                     void* OutAddress = nullptr;
-                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;)
+                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;);
 
                     if (auto* InstancedStruct = static_cast<const FInstancedStruct*>(OutAddress))
                     {

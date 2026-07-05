@@ -36,19 +36,19 @@ void FRemReflectedFunctionCallDataDetails::CustomizeHeader(const TSharedRef<IPro
     FunctionCallDataPropertyHandle = StructPropertyHandle;
 
     const auto FunctionDataPropertyHandle = StructPropertyHandle->GetChildHandle(
-        FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionCallData, FunctionData)}, false);
+        FName{GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemReflectedFunctionCallData, FunctionData)}, false);
 
     const auto FunctionNamePropertyHandle = FunctionDataPropertyHandle->GetChildHandle(
-        FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionName)}, false);
+        FName{GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionName)}, false);
     FunctionNamePropertyHandle->SetOnPropertyValueChangedWithData(
         TDelegate<void(const FPropertyChangedEvent&)>::CreateSP(this, &ThisClass::OnFunctionNameChanged));
 
     const auto FunctionOwnerClassPropertyHandle = FunctionDataPropertyHandle->GetChildHandle(
-        FName{GET_MEMBER_NAME_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionOwnerClass)}, false);
+        FName{GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemReflectedFunctionData, FunctionOwnerClass)}, false);
 
     // sync useful meta data from outer
-    const auto AllowedClassesKey{FName{TEXTVIEW("AllowedClasses")}};
-    const auto DisallowedClassesKey{FName{TEXTVIEW("DisallowedClasses")}};
+    const auto AllowedClassesKey{FName{ANSITEXTVIEW("AllowedClasses")}};
+    const auto DisallowedClassesKey{FName{ANSITEXTVIEW("DisallowedClasses")}};
     FunctionOwnerClassPropertyHandle->SetInstanceMetaData(DisallowedClassesKey,
         FunctionCallDataPropertyHandle->GetMetaData(DisallowedClassesKey));
 
@@ -98,7 +98,7 @@ void FRemReflectedFunctionCallDataDetails::OnFunctionNameChanged(
         FNotificationInfo Info(NSLOCTEXT("RemReflectedFunctionCallData", "FunctionIsNotSupported",
             "Parameter of selected function is not supported"));
         Info.bUseThrobber    = true;
-        Info.Image           = FAppStyle::GetBrush(FName{TEXTVIEW("MessageLog.Warning")});
+        Info.Image           = FAppStyle::GetBrush(FName{ANSITEXTVIEW("MessageLog.Warning")});
         Info.FadeOutDuration = 4.0f;
         Info.ExpireDuration  = Info.FadeOutDuration;
         FSlateNotificationManager::Get().AddNotification(Info);
