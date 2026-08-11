@@ -26,6 +26,11 @@
             "Name": "RemCommonEditor",
             "Type": "UncookedOnly",
             "LoadingPhase": "Default"
+        },
+        {
+            "Name": "RemEditorUtilitiesTest",
+            "Type": "UncookedOnly",
+            "LoadingPhase": "Default"
         }
     ],
     "Plugins": [
