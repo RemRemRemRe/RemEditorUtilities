@@ -5,18 +5,18 @@
 
 bool FRemEditorUtilitiesClassFilter::IsClassAllowed(const FClassViewerInitializationOptions& InInitOptions,
     const UClass* InClass,
-    TSharedRef<FClassViewerFilterFuncs> InFilterFuncs)
+    const TSharedRef<FClassViewerFilterFuncs> InFilterFunc)
 {
-    return !InClass->HasAnyClassFlags(DisallowedClassFlags) && InFilterFuncs->IfInChildOfClassesSet(DisallowedClasses,
+    return !InClass->HasAnyClassFlags(DisallowedClassFlags) && InFilterFunc->IfInChildOfClassesSet(DisallowedClasses,
                InClass) != EFilterReturn::Passed
-           && InFilterFuncs->IfInChildOfClassesSet(AllowedClasses, InClass) != EFilterReturn::Failed;
+           && InFilterFunc->IfInChildOfClassesSet(AllowedClasses, InClass) != EFilterReturn::Failed;
 }
 
 bool FRemEditorUtilitiesClassFilter::IsUnloadedClassAllowed(const FClassViewerInitializationOptions& InInitOptions,
     const TSharedRef<const IUnloadedBlueprintData> InUnloadedClassData,
-    TSharedRef<FClassViewerFilterFuncs> InFilterFuncs)
+    const TSharedRef<FClassViewerFilterFuncs> InFilterFunc)
 {
-    return !InUnloadedClassData->HasAnyClassFlags(DisallowedClassFlags) && InFilterFuncs->IfInChildOfClassesSet(
+    return !InUnloadedClassData->HasAnyClassFlags(DisallowedClassFlags) && InFilterFunc->IfInChildOfClassesSet(
                DisallowedClasses, InUnloadedClassData) != EFilterReturn::Passed
-           && InFilterFuncs->IfInChildOfClassesSet(AllowedClasses, InUnloadedClassData) != EFilterReturn::Failed;
+           && InFilterFunc->IfInChildOfClassesSet(AllowedClasses, InUnloadedClassData) != EFilterReturn::Failed;
 }
