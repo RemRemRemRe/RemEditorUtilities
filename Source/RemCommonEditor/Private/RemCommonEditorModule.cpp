@@ -25,6 +25,8 @@ bool IRemCommonEditorModule::IsAvailable()
     return FModuleManager::Get().IsModuleLoaded("RemCommonEditor");
 }
 
+namespace
+{
 
 class FRemCommonEditorModule final : public IRemCommonEditorModule
 {
@@ -38,6 +40,8 @@ public:
     static void OnGetCategoriesMetaFromPropertyHandle(const TSharedPtr<IPropertyHandle> PropertyHandle,
         FString& OutCategoryString);
 };
+
+}
 
 IMPLEMENT_MODULE(FRemCommonEditorModule, RemCommonEditor)
 
@@ -105,6 +109,7 @@ void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TShared
         auto Parent{PropertyHandle};
         const FRemGameplayTagArray* GameplayTagWithCategory{};
 
+        // walk up the parent handle chain to the root
         while (true)
         {
             Parent = Parent->GetParentHandle();
