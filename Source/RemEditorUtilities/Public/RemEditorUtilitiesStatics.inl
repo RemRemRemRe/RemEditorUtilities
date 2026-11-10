@@ -4,6 +4,7 @@
 
 #include "RemEditorUtilitiesStatics.h"
 #include "Enum/RemContainerCombination.h"
+#include "RemConcepts.h"
 
 #include "Editor.h"
 #include "Subsystems/AssetEditorSubsystem.h"
@@ -13,6 +14,7 @@
 #include "Macro/RemAssertionMacros.h"
 #include "ObjectEditorUtils.h"
 #include "PropertyHandle.h"
+#include "StructUtils/InstancedStruct.h"
 #include "Engine/Blueprint.h"
 #include "Templates/RemPropertyHelper.h"
 #include "Templates/RemInstanceOf.h"
@@ -419,5 +421,63 @@ StructType* GetStructPtr(const TSharedRef<IPropertyHandle> PropertyHandle)
     RemCheckVariable(StructPtr, return {};);
 
     return static_cast<StructType*>(StructPtr);
+}
+
+/**
+ * @brief Resolve the value of the struct that declares the member a property handle points at
+ *
+ * A details panel parents a member handle to its declaring struct, but a member of a container is only reached
+ * through the container handle, and an FInstancedStruct shows the instance's members directly under the instanced
+ * struct handle. Walking up to the nearest struct handle covers all three shapes.
+ *
+ * @param MemberHandle handle of the member, or of one of the elements of its container
+ * @return the value of the declaring StructType, or nullptr when the chain does not lead to StructType or its value
+ * cannot be read (a multi-selection has no single value) --- the caller treats nullptr as "no answer"
+ * @note an instance held by an FInstancedStruct is resolved; a TInstancedStruct<T> member is not, as it is a
+ * distinct script struct with a property of its own
+ */
+template <CHasStaticStruct StructType>
+const StructType* GetDeclaringStructValue(const TSharedPtr<IPropertyHandle>& MemberHandle)
+{
+    if (!MemberHandle.IsValid())
+    {
+        return nullptr;
+    }
+
+    for (auto Handle = MemberHandle->GetParentHandle();
+         Handle.IsValid();
+         Handle = Handle->GetParentHandle())
+    {
+        const auto* StructProperty = CastField<FStructProperty>(Handle->GetProperty());
+        if (!StructProperty)
+        {
+            // not a struct handle: a container stands between the member and the struct that declares it
+            continue;
+        }
+
+        const auto* const DeclaringScriptStruct = StructProperty->Struct.Get();
+        if (DeclaringScriptStruct != StructType::StaticStruct()
+            && DeclaringScriptStruct != FInstancedStruct::StaticStruct())
+        {
+            // the nearest struct neither is StructType nor holds it, so the member does not belong to StructType
+            return nullptr;
+        }
+
+        void* ValueData{};
+        if (Handle->GetValueData(ValueData) != FPropertyAccess::Success
+            || !ValueData)
+        {
+            return nullptr;
+        }
+
+        if (DeclaringScriptStruct == StructType::StaticStruct())
+        {
+            return static_cast<const StructType*>(ValueData);
+        }
+
+        return static_cast<const FInstancedStruct*>(ValueData)->GetPtr<StructType>();
+    }
+
+    return nullptr;
 }
 }

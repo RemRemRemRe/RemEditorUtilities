@@ -16,6 +16,7 @@ public class RemEditorUtilitiesTest : ModuleRules
 				"Engine",
 
 				"ClassViewer",
+				"GameplayTags",
 				"PropertyEditor",
 				"UMG",
 				"UnrealEd",

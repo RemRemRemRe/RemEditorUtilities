@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Engine/DataAsset.h"
+#include "GameplayTagContainer.h"
 #include "RemEditorOnlyTickableActor.h"
 
 // generated.h MUST be included BEFORE the type declarations: GENERATED_BODY()
@@ -38,6 +39,18 @@ struct FRemTestEditorData
 
     UPROPERTY()
     FRemTestEditorNested Nested{};
+};
+
+/**
+ * Test-only struct whose Tags member collides with the Rem tag array by member name and element type only.
+ */
+USTRUCT()
+struct FRemTestTagLookalike
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<FGameplayTag> Tags;
 };
 
 /**

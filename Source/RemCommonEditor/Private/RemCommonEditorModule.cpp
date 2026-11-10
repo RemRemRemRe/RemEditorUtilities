@@ -12,6 +12,8 @@
 #include "GameplayTag/RemGameplayTagArray.h"
 #include "Macro/RemAssertionMacros.h"
 #include "Macro/RemLogMacros.h"
+#include "RemCommonEditorGameplayTag.h"
+#include "RemEditorUtilitiesStatics.inl"
 #include "Struct/RemReflectedFunctionCallData.h"
 #include "Struct/RemReflectedFunctionData.h"
 
@@ -82,76 +84,32 @@ void FRemCommonEditorModule::ShutdownModule()
 void FRemCommonEditorModule::OnGetCategoriesMetaFromPropertyHandle(const TSharedPtr<IPropertyHandle> PropertyHandle,
     FString& OutCategoryString)
 {
-    static_assert(sizeof(FRemGameplayTagWithCategory::Tag), "Tag member of FRemGameplayTagWithCategory is missing!");
-
-    RemCheckVariable(PropertyHandle, return;);
-
-    const auto* Property = PropertyHandle->GetProperty();
-    RemCheckVariable(Property, return;);
-
-    if (Property->GetFName() == GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemGameplayTagWithCategory, Tag)
-        && Property->GetOwnerStruct() == FRemGameplayTagWithCategory::StaticStruct())
+    // This callback is broadcast for every tag property of every details panel in the editor, so everything that is
+    // not provably one of our members is a silent pass-through: another struct's tag member is not an error of ours
+    // to report, and neither is a member whose value cannot be read (a multi-selection has no single value).
+    const auto* const Property = PropertyHandle.IsValid()
+                                     ? PropertyHandle->GetProperty()
+                                     : nullptr;
+    if (!Rem::CommonEditor::IsTagCategoryProperty(Property))
     {
-        void* OutAddress = nullptr;
-        RemCheckCondition(PropertyHandle->GetParentHandle()->GetValueData(OutAddress) == FPropertyAccess::Success,
-            return;);
-
-        if (const auto* GameplayTagWithCategory = static_cast<const FRemGameplayTagWithCategory*>(OutAddress);
-            GameplayTagWithCategory && GameplayTagWithCategory->GetCategory().IsValid())
-        {
-            OutCategoryString = GameplayTagWithCategory->GetCategory().GetTagName().ToString();
-        }
+        return;
     }
-    else if (const FStructProperty* Field = CastField<FStructProperty>(Property);
-        Field && Field->Struct == FGameplayTag::StaticStruct()
-        && Field->GetFName() == GET_MEMBER_NAME_ANSI_STRING_VIEW_CHECKED(FRemGameplayTagArray, Tags))
+
+    if (Property->GetOwnerStruct() == FRemGameplayTagWithCategory::StaticStruct())
     {
-        auto Parent{PropertyHandle};
-        const FRemGameplayTagArray* GameplayTagWithCategory{};
-
-        // walk up the parent handle chain to the root
-        while (true)
+        if (const auto* TagWithCategory =
+                Rem::Editor::GetDeclaringStructValue<FRemGameplayTagWithCategory>(PropertyHandle);
+            TagWithCategory && TagWithCategory->GetCategory().IsValid())
         {
-            Parent = Parent->GetParentHandle();
-            if (!Parent.IsValid())
-            {
-                break;
-            }
-
-            if (const auto* StructProperty = CastField<FStructProperty>(Parent->GetProperty());
-                StructProperty)
-            {
-                if (StructProperty->Struct == FRemGameplayTagArray::StaticStruct())
-                {
-                    void* OutAddress = nullptr;
-                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;);
-
-                    GameplayTagWithCategory = static_cast<const FRemGameplayTagArray*>(OutAddress);
-                    break;
-                }
-
-                if (StructProperty->Struct == FInstancedStruct::StaticStruct())
-                {
-                    void* OutAddress = nullptr;
-                    RemCheckCondition(Parent->GetValueData(OutAddress) == FPropertyAccess::Success, return;);
-
-                    if (auto* InstancedStruct = static_cast<const FInstancedStruct*>(OutAddress))
-                    {
-                        if (GameplayTagWithCategory = InstancedStruct->GetPtr<const FRemGameplayTagArray>();
-                            GameplayTagWithCategory)
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
+            OutCategoryString = TagWithCategory->GetCategory().GetTagName().ToString();
         }
 
-        RemCheckVariable(GameplayTagWithCategory, return;);
+        return;
+    }
 
-        if (GameplayTagWithCategory->OptionalCategory.IsValid())
-        {
-            OutCategoryString = GameplayTagWithCategory->OptionalCategory.GetTagName().ToString();
-        }
+    if (const auto* GameplayTagArray = Rem::Editor::GetDeclaringStructValue<FRemGameplayTagArray>(PropertyHandle);
+        GameplayTagArray && GameplayTagArray->OptionalCategory.IsValid())
+    {
+        OutCategoryString = GameplayTagArray->OptionalCategory.GetTagName().ToString();
     }
 }

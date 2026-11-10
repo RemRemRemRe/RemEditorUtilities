@@ -4,6 +4,7 @@
 
 #include "Enum/RemContainerCombination.h"
 #include "Math/Vector4.h"
+#include "PropertyEditorModule.h"
 
 class FDetailWidgetRow;
 class IDetailGroup;
@@ -13,11 +14,6 @@ class UWidget;
 class SWidget;
 template <class T>
 struct TSoftObjectPtr;
-
-namespace FPropertyAccess
-{
-enum Result : int;
-}
 
 namespace Rem::Editor
 {
