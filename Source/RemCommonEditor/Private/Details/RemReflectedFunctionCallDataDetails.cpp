@@ -21,7 +21,7 @@ TSharedRef<IPropertyTypeCustomization> FRemReflectedFunctionCallDataDetails::Mak
 }
 
 void FRemReflectedFunctionCallDataDetails::CustomizeHeader(const TSharedRef<IPropertyHandle> StructPropertyHandle,
-    FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
+    FDetailWidgetRow& HeaderRow, [[maybe_unused]] IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
     HeaderRow
         .NameContent()
@@ -68,8 +68,8 @@ void FRemReflectedFunctionCallDataDetails::CustomizeHeader(const TSharedRef<IPro
     FunctionOwnerClassPropertyHandle->AddRestriction(Restriction);
 }
 
-void FRemReflectedFunctionCallDataDetails::CustomizeChildren(TSharedRef<IPropertyHandle> StructPropertyHandle,
-    IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
+void FRemReflectedFunctionCallDataDetails::CustomizeChildren(const TSharedRef<IPropertyHandle> StructPropertyHandle,
+    IDetailChildrenBuilder& StructBuilder, [[maybe_unused]] IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
     uint32 ChildrenNum{};
     StructPropertyHandle->GetNumChildren(ChildrenNum);
@@ -81,7 +81,7 @@ void FRemReflectedFunctionCallDataDetails::CustomizeChildren(TSharedRef<IPropert
 }
 
 void FRemReflectedFunctionCallDataDetails::OnFunctionNameChanged(
-    const FPropertyChangedEvent& PropertyChangedEvent) const
+    [[maybe_unused]] const FPropertyChangedEvent& PropertyChangedEvent) const
 {
     RemCheckVariable(FunctionCallDataPropertyHandle, return;);
 
@@ -93,7 +93,7 @@ void FRemReflectedFunctionCallDataDetails::OnFunctionNameChanged(
     const auto SavedFunctionName{FunctionCallData->FunctionData.FunctionName};
     FunctionCallData->TryFillParameters();
 
-    if (bool bFunctionNameGotRest = !SavedFunctionName.IsNone() && FunctionCallData->FunctionData.FunctionName.IsNone())
+    if (!SavedFunctionName.IsNone() && FunctionCallData->FunctionData.FunctionName.IsNone())
     {
         FNotificationInfo Info(NSLOCTEXT("RemReflectedFunctionCallData", "FunctionIsNotSupported",
             "Parameter of selected function is not supported"));

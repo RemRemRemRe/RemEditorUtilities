@@ -16,15 +16,15 @@ struct TSoftObjectPtr;
 
 namespace FPropertyAccess
 {
-enum Result;
+enum Result : int;
 }
 
 namespace Rem::Editor
 {
 REMEDITORUTILITIES_API extern const FString IndexFormat;
 
-REMEDITORUTILITIES_API extern const FName AssetComboStyleName;
-REMEDITORUTILITIES_API extern const FName AssetNameColorName;
+constexpr FLazyName AssetComboStyleName{"PropertyEditor.AssetComboStyle"};
+constexpr FLazyName AssetNameColorName{"PropertyEditor.AssetName.ColorAndOpacity"};
 
 REMEDITORUTILITIES_API extern const FVector4f PropertyPadding;
 

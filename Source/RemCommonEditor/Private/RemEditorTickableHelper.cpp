@@ -22,7 +22,7 @@ FRemEditorTickableHelper::FRemEditorTickableHelper(ARemEditorOnlyTickableActor* 
 void FRemEditorTickableHelper::Tick(const float DeltaTime)
 {
     auto* Actor = WeakActor.Get();
-    RemCheckVariable(ensure, Actor, return);
+    RemCheckVariable(REM_ENSURE, Actor, return);
 
     Actor->EditorTick(DeltaTime);
 }

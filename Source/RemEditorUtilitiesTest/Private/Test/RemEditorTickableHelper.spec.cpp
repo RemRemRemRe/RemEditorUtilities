@@ -42,7 +42,8 @@ void FRemEditorTickableHelperTest::Define()
 
             {
                 FRemEditorTickableHelper Helper{Actor};
-                TestFalse(TEXT("not tickable after destroy"), static_cast<const FTickableEditorObject&>(Helper).IsTickable());
+                TestFalse(TEXT("not tickable after destroy"),
+                    static_cast<const FTickableEditorObject&>(Helper).IsTickable());
             }
         });
     });

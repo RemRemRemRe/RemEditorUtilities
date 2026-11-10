@@ -17,7 +17,7 @@ TSharedRef<IPropertyTypeCustomization> FRemReflectedFunctionDataDetails::MakeIns
     return MakeShared<FRemReflectedFunctionDataDetails>();
 }
 
-void FRemReflectedFunctionDataDetails::CustomizeHeader(TSharedRef<IPropertyHandle> StructPropertyHandle,
+void FRemReflectedFunctionDataDetails::CustomizeHeader(const TSharedRef<IPropertyHandle> StructPropertyHandle,
     FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
     HeaderRow

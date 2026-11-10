@@ -21,9 +21,11 @@ protected:
 
     friend FRemEditorTickableHelper;
 
+public:
     virtual void PostActorCreated() override;
     virtual void Destroyed() override;
 
+protected:
     virtual void EditorTick(float DeltaSeconds);
 
     UFUNCTION(BlueprintImplementableEvent, DisplayName = "EditorTick", Category = RemEditorOnlyTickableActor,

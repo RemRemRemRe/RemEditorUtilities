@@ -1,2 +1,8 @@
 Binaries
 Intermediate
+
+# Local AI documents (per-machine; mirrors the parent's .agents convention)
+/CONTEXT.md
+/GLOSSARY.md
+/.agents/
+/docs/adr

@@ -41,9 +41,12 @@ void FRemEditorUtilitiesClassFilterTest::Define()
             const auto FilterFuncs = MakeShared<FClassViewerFilterFuncs>();
             FClassViewerInitializationOptions InitOptions{};
 
-            TestTrue(TEXT("derived allowed"), Filter.IsClassAllowed(InitOptions, ACharacter::StaticClass(), FilterFuncs));
-            TestTrue(TEXT("exact class allowed"), Filter.IsClassAllowed(InitOptions, AActor::StaticClass(), FilterFuncs));
-            TestFalse(TEXT("unrelated denied"), Filter.IsClassAllowed(InitOptions, UObject::StaticClass(), FilterFuncs));
+            TestTrue(TEXT("derived allowed"),
+                Filter.IsClassAllowed(InitOptions, ACharacter::StaticClass(), FilterFuncs));
+            TestTrue(TEXT("exact class allowed"),
+                Filter.IsClassAllowed(InitOptions, AActor::StaticClass(), FilterFuncs));
+            TestFalse(TEXT("unrelated denied"),
+                Filter.IsClassAllowed(InitOptions, UObject::StaticClass(), FilterFuncs));
         });
 
         It(TEXT("should deny classes derived from the disallowed set"), [this]
@@ -55,14 +58,15 @@ void FRemEditorUtilitiesClassFilterTest::Define()
 
             TestFalse(TEXT("derived denied"), Filter.IsClassAllowed(InitOptions, ACharacter::StaticClass(),
                 FilterFuncs));
-            TestTrue(TEXT("unrelated allowed"), Filter.IsClassAllowed(InitOptions, UObject::StaticClass(), FilterFuncs));
+            TestTrue(TEXT("unrelated allowed"),
+                Filter.IsClassAllowed(InitOptions, UObject::StaticClass(), FilterFuncs));
         });
 
         It(TEXT("should deny classes with disallowed class flags"), [this]
         {
             FRemEditorUtilitiesClassFilter Filter{};
             Filter.DisallowedClassFlags = CLASS_Abstract;
-            const auto FilterFuncs = MakeShared<FClassViewerFilterFuncs>();
+            const auto FilterFuncs      = MakeShared<FClassViewerFilterFuncs>();
             FClassViewerInitializationOptions InitOptions{};
 
             TestFalse(TEXT("abstract denied"), Filter.IsClassAllowed(InitOptions, URemTestAbstractAsset::StaticClass(),

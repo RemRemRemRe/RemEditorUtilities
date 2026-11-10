@@ -12,7 +12,7 @@ struct REMCOMMONEDITOR_API FRemEditorTickableHelper : FTickableEditorObject
 
     explicit FRemEditorTickableHelper(ARemEditorOnlyTickableActor* Actor);
 
-protected:
+public:
     virtual void Tick(float DeltaTime) override;
     virtual bool IsTickable() const override;
     virtual TStatId GetStatId() const override;
